@@ -62,11 +62,8 @@ SGE_RESULT sge_render_initialize(sge_render *render, sge_render_settings *render
 }
 
 SGE_RESULT sge_draw_frame(sge_render *render) {
-        if (!render->sge_interface->draw(render)) {
-                return SGE_ERROR;
-        }
-
-        return SGE_SUCCESS;
+        SGE_RESULT draw_result = render->sge_interface->draw(render);
+        return draw_result;
 }
 
 SGE_RESULT sge_begin_frame(sge_render *render) {
@@ -482,10 +479,10 @@ sge_material *create_logo_material(sge_render *render) {
 
         sge_shader *vert_shader = allocate_memory(sizeof(sge_shader), MEMORY_TAG_RENDERER);
         vert_shader->api = render->api;
-        vert_shader->api_shader = sge_vulkan_shader_load(render, "simple_shader.vert.spv");
+        vert_shader->api_shader = sge_vulkan_shader_load_old(render, "simple_shader.vert.spv");
         sge_shader *frag_shader = allocate_memory(sizeof(sge_shader), MEMORY_TAG_RENDERER);
         frag_shader->api = render->api;
-        frag_shader->api_shader = sge_vulkan_shader_load(render, "simple_shader.frag.spv");
+        frag_shader->api_shader = sge_vulkan_shader_load_old(render, "simple_shader.frag.spv");
 
         sge_material *material = allocate_memory(sizeof(sge_material), MEMORY_TAG_RENDERER);
 
@@ -587,21 +584,6 @@ sge_renderable *create_renderable_from_rend_file(sge_render *render, SGE_REND_FI
                                     log_event(LOG_LEVEL_FATAL, "failed to allocate vertex attributes");
                                     return NULL;
                                 }
-
-
-
-                                sge_vertex_format *format = allocate_memory(sizeof(sge_vertex_format), MEMORY_TAG_RENDERER);
-                                if (format == NULL) {
-                                    log_event(LOG_LEVEL_FATAL, "failed to allocate vertex format");
-                                    return NULL;
-                                }
-
-                                format->stride = renderable->mesh->vertex_size;
-                                format->attributes = attributes;
-                                format->attribute_count = renderable->mesh->attribute_count;
-
-                                renderable->mesh->format = format;
-
 
                                 has_mesh = true;
                         } break;

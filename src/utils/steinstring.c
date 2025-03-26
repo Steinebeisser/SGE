@@ -18,3 +18,31 @@ int get_longest_element_in_array(char *array[]) {
         }
         return longest_element_length;
 }
+
+SGE_RESULT get_last_string_index(char *string, char element, size_t *index_var) {
+        for (size_t i = 0; i < strlen(string); ++i) {
+
+                if (element == string[i]) {
+                        *index_var = i;
+                }
+        }
+
+        return SGE_SUCCESS;
+}
+
+SGE_RESULT get_file_ending(char *filename, char *file_ending) {
+        size_t last_dot_index = 0;
+        get_last_string_index(filename, '.', &last_dot_index);
+
+        strncpy(file_ending, filename + last_dot_index + 1, strlen(filename) - last_dot_index - 1);
+        file_ending[last_dot_index] = '\0';
+
+        return SGE_SUCCESS;
+}
+
+SGE_BOOL string_includes(char *string, char *check_string) {
+        if (strstr(string, check_string) != NULL) {
+                return SGE_TRUE;
+        }
+        return SGE_FALSE;
+}

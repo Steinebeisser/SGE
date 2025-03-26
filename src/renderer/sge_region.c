@@ -116,6 +116,8 @@ SGE_RESULT sge_region_add_renderable(sge_region *region, sge_renderable *rendera
         region->renderables = reallocate_memory(region->renderables, sizeof(sge_renderable *) * region->renderable_count, MEMORY_TAG_RENDERER);
         region->renderables[region->renderable_count - 1] = renderable;
 
+        log_event(LOG_LEVEL_INFO, "added renderable to region");
+
         return SGE_SUCCESS;
 }
 
@@ -130,14 +132,14 @@ SGE_RESULT sge_region_resize_auto_resizing_regions(sge_render *render, float old
         for (int i = 0; i < render->region_count; ++i) {
                 sge_region *region = render->regions[i];
                 if (region->auto_scale_on_resize) {
-                        if (region->viewport->width == -1000) {
+                        if (region->viewport->width == SGE_REGION_FULL_DIMENSION) {
                                 region->viewport->width == new_width;
                                 region->scissor->extent_width = new_width / 2;
                         } else {
                                 region->viewport->width *= resize_factor_width;
                                 region->scissor->extent_width *= resize_factor_width;
                         }
-                        if (region->viewport->height == -1000) {
+                        if (region->viewport->height == SGE_REGION_FULL_DIMENSION) {
                                 region->viewport->height == new_height;
                                 region->scissor->extent_height = new_height;
                         } else {

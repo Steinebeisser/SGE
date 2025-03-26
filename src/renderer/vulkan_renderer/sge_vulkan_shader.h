@@ -8,5 +8,6 @@
 #include "../sge_render.h"
 
 VkShaderModule sge_vulkan_shader_load(sge_render *render, const char *shader_name);
+VkShaderModule sge_vulkan_shader_load_old(sge_render *render, const char *shader_name);
 
 #endif //SGE_VULKAN_SHADER_H

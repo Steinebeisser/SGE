@@ -16,6 +16,7 @@ typedef enum memory_tag {
         MEMORY_TAG_RENDERER,
         MEMORY_TAG_REGION,
         MEMORY_TAG_WINDOW,
+        MEMORY_TAG_SHADER,
         MEMORY_TAG_TEST_1,
         MEMORY_TAG_TEST_2,
         MEMORY_TAG_TEST_3,

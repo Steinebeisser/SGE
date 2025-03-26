@@ -8,6 +8,7 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#include "steinstring.h"
 #include "../core/logging.h"
 #include "../core/memory_control.h"
 
@@ -26,7 +27,6 @@
 #endif
 
 
-
 void make_filename_save(char *filename) {
         for(int i = 0; i < strlen(filename); i++) {
                 if (filename[i] == ':' || filename[i] == '.') {
@@ -38,13 +38,13 @@ void make_filename_save(char *filename) {
         }
 }
 
-int create_directory_if_not_exists(const char *dir_path) {
+SGE_BOOL create_directory_if_not_exists(char *dir_path) {
         struct stat st = {0};
         if (stat(dir_path, &st) == -1) {
                 #ifdef WIN32
                 if(create_dir(dir_path) == 0) {
                         perror("Error creating directory");
-                        return 1;
+                        return SGE_FALSE;
                 }
                 #else
                 #ifdef Unix
@@ -54,9 +54,18 @@ int create_directory_if_not_exists(const char *dir_path) {
                 }
                 #endif
                 #endif
+
+                char folder_name[255];
+                size_t last_slash_index = 0;
+
+                get_last_string_index(dir_path, '\\', &last_slash_index);
+                strncpy(folder_name, dir_path + last_slash_index +1 , strlen(dir_path) - last_slash_index -1 );
+
+                log_event(LOG_LEVEL_INFO, "Created dir: \"%s\", in path: %s", folder_name, dir_path);
         }
 
-        return 0;
+
+        return SGE_TRUE;
 }
 
 char *get_current_working_directory() {
@@ -65,6 +74,22 @@ char *get_current_working_directory() {
 
         return current_working_directory;
 }
+
+//todo improve, only works if process has access to it
+SGE_BOOL sge_file_exists(char *filepath) {
+        FILE *fd = fopen(filepath, "r");
+        if (fd) {
+                fclose(fd);
+                return SGE_TRUE;
+        }
+        fd = fopen(filepath, "rb");
+        if (fd) {
+                fclose(fd);
+                return SGE_TRUE;
+        }
+        return SGE_FALSE;
+}
+
 
 uint32_t *read_file_as_binary(const char *filepath, size_t *code_size) {
         FILE *file = fopen(filepath, "rb");
