@@ -5,6 +5,8 @@
 #include "sge_vulkan_device.h"
 #include "../../core/logging.h"
 
+VkFormat find_depth_format(VkPhysicalDevice physical_device);
+
 SGE_RESULT sge_vulkan_physical_device_select(sge_render *render) {
         uint32_t device_count = 0;
         sge_vulkan_context *vk_context = (sge_vulkan_context*)render->api_context;
@@ -19,7 +21,7 @@ SGE_RESULT sge_vulkan_physical_device_select(sge_render *render) {
         vkEnumeratePhysicalDevices(vk_context->instance, &device_count, devices);
 
         struct highest_score_gpu {
-                int score;
+                uint32_t score;
                 int device_index;
                 bool is_dedicated_gpu;
         };
@@ -30,11 +32,15 @@ SGE_RESULT sge_vulkan_physical_device_select(sge_render *render) {
                 VkPhysicalDeviceProperties properties;
                 vkGetPhysicalDeviceProperties(devices[i], &properties);
 
+                VkPhysicalDeviceFeatures features;
+                vkGetPhysicalDeviceFeatures(devices[i], &features);
+                log_event(LOG_LEVEL_INFO, "DEVICE: %s SUPPORTS fillModeNonSolid: %d", properties.deviceName, features.fillModeNonSolid = VK_TRUE ? 1 : 0);
+
                 VkPhysicalDeviceMemoryProperties memory_properties;
                 vkGetPhysicalDeviceMemoryProperties(devices[i], &memory_properties);
 
                 const bool is_dedicated = properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
-                int score = 0;
+                uint32_t score = 0;
                 if (is_dedicated) {score += 100; }
                 score += (properties.limits.maxComputeSharedMemorySize / 1024) / 2;
                 score += (properties.limits.maxImageDimension2D / 1024) * 5;
@@ -97,6 +103,13 @@ SGE_RESULT sge_vulkan_logical_device_create(sge_render *render) {
         VkQueueFamilyProperties queue_family_properties[queue_family_count];
         vkGetPhysicalDeviceQueueFamilyProperties(vk_context->physical_device, &queue_family_count, queue_family_properties);
 
+        VkFormat depth_format = find_depth_format(vk_context->physical_device);
+        if (depth_format == VK_FORMAT_UNDEFINED) {
+                log_event(LOG_LEVEL_FATAL, "failed to receive depthj format for physical device");
+                return SGE_ERROR;
+        }
+        vk_context->sc.depth_format = depth_format;
+
         uint32_t graphics_queue_family_index = UINT32_MAX;
         for (int i = 0; i < queue_family_count; i++) {
                 //Queue flags: 15
@@ -139,13 +152,18 @@ SGE_RESULT sge_vulkan_logical_device_create(sge_render *render) {
                 .pNext = 0
         };
 
-        VkDeviceCreateInfo device_create_info = {0};
-        device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        device_create_info.queueCreateInfoCount = 1;
-        device_create_info.pQueueCreateInfos = &queue_create_info;
-        device_create_info.enabledExtensionCount = sizeof(extensions)/sizeof(extensions[0]);
-        device_create_info.ppEnabledExtensionNames = extensions;
-        device_create_info.pNext = &dynamic_rendering_features;
+        VkPhysicalDeviceFeatures device_features;
+        vkGetPhysicalDeviceFeatures(vk_context->physical_device, &device_features);
+
+        VkDeviceCreateInfo device_create_info = {
+                .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+                .queueCreateInfoCount = 1,
+                .pQueueCreateInfos = &queue_create_info,
+                .enabledExtensionCount = sizeof(extensions)/sizeof(extensions[0]),
+                .ppEnabledExtensionNames = extensions,
+                .pNext = &dynamic_rendering_features,
+                .pEnabledFeatures = &device_features
+        };
 
         VkDevice vk_device;
 
@@ -175,4 +193,28 @@ SGE_RESULT sge_vulkan_logical_device_destroy(sge_render *render) {
                 return SGE_SUCCESS;
         }
         return SGE_ERROR;
+}
+
+VkFormat find_depth_format(VkPhysicalDevice physical_device) {
+        VkFormat query_formats[] = {
+                VK_FORMAT_D32_SFLOAT,
+                VK_FORMAT_D32_SFLOAT_S8_UINT,
+                VK_FORMAT_D24_UNORM_S8_UINT,
+                VK_FORMAT_D16_UNORM,
+        };
+
+
+
+        for (int i = 0; i < ARRAYSIZE(query_formats); ++i) {
+                VkFormatProperties properties;
+
+                vkGetPhysicalDeviceFormatProperties(physical_device, query_formats[i], &properties);
+                bool supported = (properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+
+                if (supported) {
+                        return query_formats[i];
+                }
+        }
+        log_event(LOG_LEVEL_ERROR, "Failed to find supported depth format");
+        return VK_FORMAT_UNDEFINED;
 }

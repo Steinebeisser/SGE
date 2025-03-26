@@ -17,7 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-const int LOG_BUFFER_SIZE = 128000;
+const int LOG_BUFFER_SIZE = 4096;
 const int TEMP_BUFFER_SIZE = 2048;
 
 bool is_debug_2 = true;
@@ -31,6 +31,8 @@ static bool cleared_temp_buffer = false;
 bool started_logging = false;
 bool using_logging = false;
 int log_buffer_index = 0;
+
+SGE_BOOL always_write = SGE_TRUE;
 
 char *log_levels[] = {"FATAL", "ERROR", "WARNING", "INFO", "DEBUG", "TRACE", NULL};
 int level_padding;
@@ -64,25 +66,25 @@ int start_logger() {
         printf("FILEPATH: %s\n", filepath);
 
         char temp[32];
-        if (create_directory_if_not_exists(filepath) != 0) {
+        if (create_directory_if_not_exists(filepath) != SGE_TRUE) {
                 return 1;
         }
         const int current_year = get_current_year();
         snprintf(temp, sizeof(temp), "\\%d", current_year);
         strcat(filepath, temp);
-        if (create_directory_if_not_exists(filepath) != 0) {
+        if (create_directory_if_not_exists(filepath) != SGE_TRUE) {
                 return 1;
         }
         const int current_month = get_current_month();
         snprintf(temp, sizeof(temp), "\\%02d", current_month);
         strcat(filepath, temp);
-        if (create_directory_if_not_exists(filepath) != 0) {
+        if (create_directory_if_not_exists(filepath) != SGE_TRUE) {
                 return 1;
         }
         const int current_day = get_current_day();
         snprintf(temp, sizeof(temp), "\\%02d", current_day);
         strcat(filepath, temp);
-        if (create_directory_if_not_exists(filepath) != 0) {
+        if (create_directory_if_not_exists(filepath) != SGE_TRUE) {
                 return 1;
         }
         strcat(filepath, "\\");
@@ -110,6 +112,9 @@ int start_logger() {
         return 0;
 }
 
+void allocation_error() {
+        log_event(LOG_LEVEL_FATAL, "Failed to allocate Memory");
+}
 
 void log_event(const log_level level, const char *message, ...) {
         if (!is_debug_2 && level != LOG_LEVEL_FATAL) {
@@ -212,6 +217,10 @@ void log_event(const log_level level, const char *message, ...) {
 
         if (is_error == 1) {
                 //todo idk what to do
+        }
+
+        if (always_write == SGE_TRUE) {
+                write_buffer_to_log_file();
         }
 
         //printf("%s\n", message);

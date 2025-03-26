@@ -147,7 +147,7 @@ LRESULT CALLBACK wndProc(const HWND hwnd, const UINT uMsg, const WPARAM wparam, 
                 } break;
                 case WM_LBUTTONUP: {
                         mouse_states[MBUTTON_LEFT] = 0;
-                }
+                } break;
                 case WM_LBUTTONDBLCLK: {
                         printf("DOUBLE CLICK WITH MOUSE\n");
                 } break;
@@ -163,17 +163,18 @@ LRESULT CALLBACK wndProc(const HWND hwnd, const UINT uMsg, const WPARAM wparam, 
 
                 case WM_MBUTTONDOWN: {
                         mouse_states[MBUTTON_MIDDLE] = 1;
-                }
+                } break;
                 case WM_MBUTTONUP: {
                         mouse_states[MBUTTON_MIDDLE] = 0;
-                }
+                } break;
 
                 case WM_XBUTTONDOWN: { //todo side buttons
 
-                }
+                } break;
 
 
                 case WM_SIZE: {
+                        log_event(LOG_LEVEL_INFO, "Resize happened");
                         printf("RESIZE HAPPENED\n");
                         width = LOWORD(lparam);
                         height = HIWORD(lparam);
@@ -232,7 +233,7 @@ sge_window *sge_window_create(const int width, const int height, const char *win
         }
 
         //https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-showwindow?redirectedfrom=MSDN
-        ShowWindow(hwnd, SW_SHOWDEFAULT);
+        //ShowWindow(hwnd, SW_SHOWDEFAULT);
         log_event(LOG_LEVEL_INFO, "Created Window");
         is_window_open = 1;
 
@@ -251,6 +252,26 @@ sge_window *sge_window_create(const int width, const int height, const char *win
         window->width  = width;
 
         return window;
+}
+
+SGE_BOOL sge_window_show(sge_window *window) {
+        if (!ShowWindow(window->handle.hwnd, SW_SHOWDEFAULT)) {
+                log_event(LOG_LEVEL_ERROR, "Failed to Show Window");
+                return SGE_FALSE;
+        }
+        log_event(LOG_LEVEL_INFO, "Showed Window");
+        is_window_open = 1;
+        return SGE_TRUE;
+}
+
+SGE_BOOL sge_window_hide(sge_window *window) {
+        if (!ShowWindow(window->handle.hwnd, SW_HIDE)) {
+                log_event(LOG_LEVEL_ERROR, "Failed to hide Window");
+                return SGE_FALSE;
+        }
+        log_event(LOG_LEVEL_INFO, "Showed Window");
+        is_window_open = 0;
+        return SGE_TRUE;
 }
 
 void hide_mouse() {

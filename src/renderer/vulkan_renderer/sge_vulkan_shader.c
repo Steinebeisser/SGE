@@ -26,7 +26,27 @@ char* get_shader_path(const char* shader_name) {
         return shader_path;
 }
 
-VkShaderModule sge_vulkan_shader_load(sge_render *render, const char *shader_name) {
+VkShaderModule sge_vulkan_shader_load(sge_render *render, const char *shader_path) {
+        sge_vulkan_context *vk_context = render->api_context;
+        size_t codeSize;
+        uint32_t *code = read_file_as_binary(shader_path, &codeSize);
+
+        VkShaderModuleCreateInfo createInfo = {0};
+        createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        createInfo.codeSize = codeSize;
+        createInfo.pCode    = code;
+
+        VkShaderModule shaderModule;
+        if (vkCreateShaderModule(vk_context->device, &createInfo, vk_context->sge_allocator, &shaderModule) != VK_SUCCESS) {
+                log_event(LOG_LEVEL_FATAL, "Failed to create shader module from file: %s", shader_path);
+                return NULL;
+        }
+
+        free_memory(code, MEMORY_TAG_INPUT);
+        return shaderModule;
+}
+
+VkShaderModule sge_vulkan_shader_load_old(sge_render *render, const char *shader_name) {
         sge_vulkan_context *vk_context = render->api_context;
         char *full_filepath = get_shader_path(shader_name);
         size_t codeSize;
@@ -48,4 +68,3 @@ VkShaderModule sge_vulkan_shader_load(sge_render *render, const char *shader_nam
         free_memory(code, MEMORY_TAG_INPUT);
         return shaderModule;
 }
-

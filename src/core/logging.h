@@ -16,6 +16,7 @@ typedef enum log_level {
 
 
 int start_logger();
+void allocation_error();
 void log_event(log_level level, const char *message, ...);
 int stop_logger();
 #endif //LOGGING_H

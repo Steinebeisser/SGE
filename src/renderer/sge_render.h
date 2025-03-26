@@ -56,13 +56,24 @@ typedef struct sge_shader { //SPIR-V vulkan, HLSL directx, GLSL opengl
 
 //todo use
 typedef struct sge_pipeline_settings {
-        sge_shader *vertex_shader;
-        sge_shader *fragment_shader;
-        sge_vertex_format *vertex_format;
-        uint32_t topology;
-        uint32_t polygon_mode;
-        uint32_t cull_face;
-        uint32_t front_face;
+        sge_vertex_format       *vertex_format;
+
+        SGE_PRIMITIVE_TYPE      topology;
+        uint32_t                patch_control_points;
+
+        SGE_POLYGON_MODE        polygon_mode;
+        float                   line_width;
+
+        SGE_CULL_MODE           cull_mode;
+        SGE_FRONT_FACE          front_face;
+        SGE_BOOL                tesselation_enabled;
+        SGE_BOOL                geometry_enabled;
+
+        SGE_MSAA_COUNT          msaa_count;
+        SGE_BOOL                per_sample_shading_enabled;
+        float                   min_sample_shading;
+
+        SGE_BOOL                is_3d;
 } sge_pipeline_settings;
 
 typedef struct sge_mesh {
@@ -88,6 +99,8 @@ typedef struct sge_renderable {
         sge_mesh        *mesh;
         sge_material    *material;
         char            name[64];
+        void            *pipeline;
+        void            *pipeline_layout;
 } sge_renderable;
 
 typedef struct sge_pipeline {

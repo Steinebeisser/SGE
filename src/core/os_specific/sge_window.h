@@ -8,6 +8,7 @@
 #include <windows.h>
 #include "../input.h"
 #include "../../renderer/sge_render.h"
+#include "../../SGE.h"
 
 typedef struct mouse_pos mouse_pos;
 typedef struct sge_render sge_render;
@@ -34,6 +35,8 @@ typedef struct sge_window {
 
 sge_window *sge_window_create(const int width,const int height,const char *window_name);
 void sge_window_destroy(sge_window *window);
+SGE_BOOL sge_window_show(sge_window *window);
+SGE_BOOL sge_window_hide(sge_window *window);
 void update_frame(const int target_fps, const DWORD start_time_ms, sge_window *window);
 void hide_mouse();
 void show_mouse();

@@ -28,6 +28,11 @@ typedef enum SGE_RESULT {
         SGE_UNSUPPORTED_SYSTEM
 } SGE_RESULT;
 
+typedef enum SGE_BOOL {
+        SGE_FALSE = 0,
+        SGE_TRUE = 1,
+} SGE_BOOL;
+
 SGE_VERSION get_sge_version();
 
 #endif //SGE_H

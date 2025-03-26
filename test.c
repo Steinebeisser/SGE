@@ -19,8 +19,10 @@
 
 #include "utils/steinutils.h"
 
+void create_cube();
+
 void seg_fault_handler(int sig) {
-       log_event(LOG_LEVEL_FATAL, "SEG FAULT OCCURED");
+       log_event(LOG_LEVEL_FATAL, "SEG FAULT OCCURED: %d", sig);
 }
 
 int main(void) {
@@ -45,6 +47,7 @@ int main(void) {
         settings->vulkan.use_dynamic_rendering = true;
         settings->vulkan.use_sge_allocator = false;
         sge_render_initialize(render, settings);
+
 
         const int target_fps = 0;
 
@@ -71,7 +74,7 @@ int main(void) {
                 .offset_x = 0,
                 .offset_y = 0,
                 .min_depth = 0.0f,
-                .max_depth = 0.0f,
+                .max_depth = 1.0f,
                 .z_index = 0,
         };
 
@@ -121,11 +124,11 @@ int main(void) {
 
         sge_movement_settings movement_settings_horizontal = {
                 .mode = ROTATE_PITCH_AND_YAW,
-                .delta_speed = 1,
+                .delta_speed = 0.5,
         };
         sge_movement_settings left_right = {
                 .mode = ROTATE_YAW_ONLY,
-                .delta_speed = 1,
+                .delta_speed = 0.5,
         };
         sge_movement_settings sprint_settings_horizontal = {
                 .mode = ROTATE_PITCH_AND_YAW,
@@ -133,7 +136,7 @@ int main(void) {
         };
         sge_movement_settings movement_settings_vertical = {
                 .mode = ROTATE_NONE,
-                .delta_speed = 0.5
+                .delta_speed = 0.2
         };
 
 
@@ -199,24 +202,40 @@ int main(void) {
         } ColoredVertex;
 
         ColoredVertex vertices[] = {
-                {
-                        .position = {-0.5f, 0.0f, 0.0f},
-                        .color = {255, 0, 0, 255}
-                },
-                {
-                        .position = {0.5f, 0.0f, 0.0f},
-                        .color = {0, 255, 0, 255}
-                },
-                {
-                        .position = {0.0f, -0.5f, 0.0f},
-                        .color = {0, 0, 255, 255}
-                }
-        };
+                // Base triangle 1 (flipped base)
+                { .position = {-0.5f, 0.0f, -0.5f}, .color = {255, 0, 0, 255} },   // Bottom-left
+                { .position = { 0.5f, 0.0f,  0.5f}, .color = {0, 0, 255, 255} },   // Top-right
+                { .position = { 0.5f, 0.0f, -0.5f}, .color = {0, 255, 0, 255} },   // Bottom-right
 
+                // Base triangle 2
+                { .position = {-0.5f, 0.0f, -0.5f}, .color = {255, 0, 0, 255} },
+                { .position = {-0.5f, 0.0f,  0.5f}, .color = {255, 255, 0, 255} }, // Top-left
+                { .position = { 0.5f, 0.0f,  0.5f}, .color = {0, 0, 255, 255} },
+
+                // Side triangle 1
+                { .position = {-0.5f, 0.0f, -0.5f}, .color = {255, 0, 0, 255} },
+                { .position = { 0.0f, -1.0f,  0.0f}, .color = {255, 255, 255, 255} }, // Peak (negative Y)
+                { .position = { 0.5f, 0.0f, -0.5f}, .color = {0, 255, 0, 255} },
+
+                // Side triangle 2
+                { .position = { 0.5f, 0.0f, -0.5f}, .color = {0, 255, 0, 255} },
+                { .position = { 0.0f, -1.0f,  0.0f}, .color = {255, 255, 255, 255} },
+                { .position = { 0.5f, 0.0f,  0.5f}, .color = {0, 0, 255, 255} },
+
+                // Side triangle 3
+                { .position = { 0.5f, 0.0f,  0.5f}, .color = {0, 0, 255, 255} },
+                { .position = { 0.0f, -1.0f,  0.0f}, .color = {255, 255, 255, 255} },
+                { .position = {-0.5f, 0.0f,  0.5f}, .color = {255, 255, 0, 255} },
+
+                // Side triangle 4
+                { .position = {-0.5f, 0.0f,  0.5f}, .color = {255, 255, 0, 255} },
+                { .position = { 0.0f, -1.0f,  0.0f}, .color = {255, 255, 255, 255} },
+                { .position = {-0.5f, 0.0f, -0.5f}, .color = {255, 0, 0, 255} },
+        };
         SGE_REND_SECTION *triangle_test_mesh_section = sge_create_mesh_section(
                 "test triangle",
                 vertices,
-                3,
+                18,
                 16,
                 attributes,
                 2,
@@ -234,34 +253,44 @@ int main(void) {
         }
 
 
+        create_cube();
 
-        SGE_REND_FILE *file = NULL;
-        sge_rend_load("test.sgerend", &file);
 
-        for (int i = 0; i < file->header.section_count; ++i) {
-                SGE_REND_SECTION *section = &file->sections[i];
-                printf("Section %d (type: %d, size: %zu bytes):\n",
-                       i, section->section_header.type, section->section_header.data_size);
+        SGE_REND_FILE *cube_file = NULL;
+        SGE_REND_FILE *pyramid_file = NULL;
+        sge_rend_load("cube.sgerend", &cube_file);
+        sge_rend_load("test.sgerend", &pyramid_file);
 
-                unsigned char *bytes = (unsigned char*)section->data;
-                for (size_t j = 0; j < section->section_header.data_size; j++) {
-                        printf("%02X ", bytes[j]);
-                        if ((j + 1) % 16 == 0) printf("\n");
-                }
-                printf("\n\n");
-        }
+        //for (int i = 0; i < file->header.section_count; ++i) {
+        //        SGE_REND_SECTION *section = &file->sections[i];
+        //        printf("Section %d (type: %d, size: %zu bytes):\n",
+        //               i, section->section_header.type, section->section_header.data_size);
+
+        //        unsigned char *bytes = (unsigned char*)section->data;
+        //        for (size_t j = 0; j < section->section_header.data_size; j++) {
+        //                printf("%02X ", bytes[j]);
+        //                if ((j + 1) % 16 == 0) printf("\n");
+        //        }
+        //        printf("\n\n");
+        //}
 
         log_event(LOG_LEVEL_INFO, "creating test renderable");
-        sge_renderable *test = create_renderable_from_rend_file(render, file);
+        sge_renderable *test = create_renderable_from_rend_file(render, pyramid_file);
         log_event(LOG_LEVEL_INFO, "finished creating test renderable");
+        sge_renderable *cube = create_renderable_from_rend_file(render, cube_file);
 
         sge_region_add_renderable(main_region, test);
+        sge_region_add_renderable(main_region, cube);
 
+        printf("ADDED REGION\n");
         //printf("%p\n", file->sections[1].data);
 
+        SGE_BOOL is_first_frame = SGE_TRUE;
+
         while (!window_should_close()) {
+                //printf("STARTED LOOP");
                 //do stuff
-                timeBeginPeriod(1);
+                //timeBeginPeriod(1);
                 const DWORD start_time = get_current_ms_time();
 
                 sge_region *active_region = sge_region_get_active(render);
@@ -357,9 +386,13 @@ int main(void) {
                 //sge_update_uniform_buffer(render, secondary_region);
                 sge_update_uniform_buffer(render, NULL);
                 sge_draw_frame(render);
-
                 update_frame(target_fps, start_time, window);
-                timeEndPeriod(1);
+                //timeEndPeriod(1);
+                //printf("REACHED LOOP END, REPEATING");
+                if (is_first_frame) {
+                        is_first_frame = SGE_FALSE;
+                        sge_window_show(render->window);
+                }
         }
 
         sge_window_destroy(window);
@@ -373,4 +406,100 @@ int main(void) {
         log_event(LOG_LEVEL_FATAL, "ERROR HIHA");
 
         return 0;
+}
+
+void create_cube() {
+//GPT created
+        SGE_MESH_ATTRIBUTE attributes[2] = {
+        {
+            .type = SGE_ATTRIBUTE_POSITION,
+            .format = SGE_FORMAT_FLOAT32,
+            .components = 3,
+            .offset = 0,
+        },
+        {
+                .type = SGE_ATTRIBUTE_COLOR,
+                .format = SGE_FORMAT_UINT8,
+                .components = 4,
+                .offset = 12,
+        }
+    };
+
+        typedef struct {
+                float position[3];
+                uint8_t color[4];
+        } ColoredVertex;
+
+    // Define 36 vertices for the cube's 12 triangles (6 faces, 2 triangles each)
+    ColoredVertex vertices[36] = {
+        // Front face (z = -0.5)
+        { .position = {-0.5f, -0.5f, -0.5f} , .color = {255, 0, 0, 255} },
+        { .position = { 0.5f, -0.5f, -0.5f} , .color = {255, 0, 0, 255} },
+        { .position = { 0.5f,  0.5f, -0.5f} , .color = {255, 0, 0, 255} },
+        { .position = {-0.5f, -0.5f, -0.5f} , .color = {255, 0, 0, 255} },
+        { .position = { 0.5f,  0.5f, -0.5f} , .color = {255, 0, 0, 255} },
+        { .position = {-0.5f,  0.5f, -0.5f} , .color = {255, 0, 0, 255} },
+
+        // Back face (z = 0.5)
+        { .position = {-0.5f, -0.5f,  0.5f} , .color = {0, 0, 255, 255} },
+        { .position = {-0.5f,  0.5f,  0.5f} , .color = {0, 0, 255, 255} },
+        { .position = { 0.5f,  0.5f,  0.5f} , .color = {0, 0, 255, 255} },
+        { .position = {-0.5f, -0.5f,  0.5f} , .color = {0, 0, 255, 255} },
+        { .position = { 0.5f,  0.5f,  0.5f} , .color = {0, 0, 255, 255} },
+        { .position = { 0.5f, -0.5f,  0.5f} , .color = {0, 0, 255, 255} },
+
+        // Left face (x = -0.5)
+        { .position = {-0.5f, -0.5f, -0.5f} , .color = {0, 255, 0, 255} },
+        { .position = {-0.5f,  0.5f, -0.5f} , .color = {0, 255, 0, 255} },
+        { .position = {-0.5f,  0.5f,  0.5f} , .color = {0, 255, 0, 255} },
+        { .position = {-0.5f, -0.5f, -0.5f} , .color = {0, 255, 0, 255} },
+        { .position = {-0.5f,  0.5f,  0.5f} , .color = {0, 255, 0, 255} },
+        { .position = {-0.5f, -0.5f,  0.5f} , .color = {0, 255, 0, 255} },
+
+        // Right face (x = 0.5)
+        { .position = { 0.5f, -0.5f, -0.5f} , .color = {255, 0, 0, 255} },
+        { .position = { 0.5f, -0.5f,  0.5f} , .color = {255, 0, 0, 255} },
+        { .position = { 0.5f,  0.5f,  0.5f} , .color = {255, 0, 0, 255} },
+        { .position = { 0.5f, -0.5f, -0.5f} , .color = {255, 0, 0, 255} },
+        { .position = { 0.5f,  0.5f,  0.5f} , .color = {255, 0, 0, 255} },
+        { .position = { 0.5f,  0.5f, -0.5f} , .color = {255, 0, 0, 255} },
+
+        // Bottom face (y = -0.5)
+        { .position = {-0.5f, -0.5f, -0.5f} , .color = {255, 0, 0, 255} },
+        { .position = { 0.5f, -0.5f, -0.5f} , .color = {255, 0, 0, 255} },
+        { .position = { 0.5f, -0.5f,  0.5f} , .color = {255, 0, 0, 255} },
+        { .position = {-0.5f, -0.5f, -0.5f} , .color = {255, 0, 0, 255} },
+        { .position = { 0.5f, -0.5f,  0.5f} , .color = {255, 0, 0, 255} },
+        { .position = {-0.5f, -0.5f,  0.5f} , .color = {255, 0, 0, 255} },
+
+        // Top face (y = 0.5)
+        { .position = {-0.5f,  0.5f, -0.5f} , .color = {255, 0, 0, 255} },
+        { .position = { 0.5f,  0.5f, -0.5f} , .color = {255, 0, 0, 255} },
+        { .position = { 0.5f,  0.5f,  0.5f} , .color = {255, 0, 0, 255} },
+        { .position = {-0.5f,  0.5f, -0.5f} , .color = {255, 0, 0, 255} },
+        { .position = { 0.5f,  0.5f,  0.5f} , .color = {255, 0, 0, 255} },
+        { .position = {-0.5f,  0.5f,  0.5f} , .color = {255, 0, 0, 255} },
+    };
+
+    // Create the mesh section
+    SGE_REND_SECTION *cube_mesh_section = sge_create_mesh_section(
+        "test cube",    // Name of the mesh
+        vertices,       // Vertex data
+        36,             // Number of vertices
+        16,             // Size of each vertex (3 floats * 4 bytes = 12 bytes)
+        attributes,     // Attribute array
+        2,              // Number of attributes (only position)
+        NULL,           // No indices
+        0               // Index count is 0
+    );
+
+    // Prepare the sections array and save the mesh
+    SGE_REND_SECTION sections[] = { *cube_mesh_section };
+
+    SGE_RESULT result = sge_rend_save("cube", sections, 1);
+    if (result != SGE_SUCCESS) {
+        fprintf(stderr, "Failed to save render file\n");
+    } else {
+        printf("Render file saved successfully.\n");
+    }
 }

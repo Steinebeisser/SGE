@@ -14,6 +14,7 @@ extern bool is_resize;
 SGE_RESULT sge_vulkan_draw_frame(sge_render *render) {
         sge_vulkan_context *vk_context = render->api_context;
         if (is_resize) {
+                vkDeviceWaitIdle(vk_context->device);
                 handle_resize_out_of_date(render);
                 is_resize = false;
                 return SGE_RESIZE;
@@ -74,6 +75,30 @@ SGE_RESULT sge_vulkan_draw_frame(sge_render *render) {
                              0, 0, NULL, 0, NULL,
                              1, &barrier);
 
+        VkImageMemoryBarrier depthBarrier = {
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+                .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                .newLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                .srcQueueFamilyIndex = vk_context->graphics_queue_family_index,
+                .dstQueueFamilyIndex = vk_context->graphics_queue_family_index,
+                .image = vk_context->sc.depth_images[image_index],
+                .subresourceRange = {
+                        .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
+                        .baseMipLevel = 0,
+                        .levelCount = 1,
+                        .baseArrayLayer = 0,
+                        .layerCount = 1
+                    },
+                    .srcAccessMask = 0,
+                    .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
+                };
+
+        vkCmdPipelineBarrier(command_buffer,
+                            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                            0, 0, NULL, 0, NULL,
+                            1, &depthBarrier);
+
         VkRenderingInfoKHR render_info = {
                 .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
                 .renderArea = {
@@ -84,11 +109,23 @@ SGE_RESULT sge_vulkan_draw_frame(sge_render *render) {
                 .colorAttachmentCount = 1,
                 .pColorAttachments = &(VkRenderingAttachmentInfoKHR){
                         .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
-                        .imageView = vk_context->sc.sc_views[image_index],
+                        .imageView = vk_context->sc.color_views[image_index],
                         .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
                         .clearValue = {{0.0f, 0.0f, 0.0f, 0.0f}}
+                },
+                .pDepthAttachment = &(VkRenderingAttachmentInfoKHR) {
+                        .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
+                        .pNext = NULL,
+                        .imageView = vk_context->sc.depth_views[image_index],
+                        .imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                        .resolveMode = 0,
+                        .resolveImageView = 0,
+                        .resolveImageLayout = 0,
+                        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                        .clearValue = { .depthStencil = { .depth = 1.0f, .stencil = 0} },
                 }
         };
 
@@ -110,7 +147,7 @@ SGE_RESULT sge_vulkan_draw_frame(sge_render *render) {
         //}
 
         vkCmdBeginRendering(command_buffer, &render_info);
-        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_context->pipeline);
+        //vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_context->pipeline);
 
         for (int i = 0; i < render->region_count; ++i) {
                 sge_region *region = render->regions[i];
@@ -118,18 +155,31 @@ SGE_RESULT sge_vulkan_draw_frame(sge_render *render) {
                 float height = region->viewport->height;
                 float width = region->viewport->width;
 
-                if (width == -1000) {
+                if (width == SGE_REGION_FULL_DIMENSION) {
                         width = vk_context->sc.surface_capabilities.currentExtent.width;
                 }
-                if (height == -1000) {
+                if (height == SGE_REGION_FULL_DIMENSION) {
                         height = vk_context->sc.surface_capabilities.currentExtent.height;
                 }
 
                 //printf("H: %f, W: %f, x: %f, y: %f, maxd: %f, mind: %f\n", height, width, region->viewport->x, region->viewport->y, region->viewport->max_depth, region->viewport->min_depth);
 
                 VkDescriptorSet desc_set = (VkDescriptorSet)region->uniform_buffers[vk_context->so.current_frame].descriptor;
-                vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_context->pipeline_layout,
-                                        0, 1, &desc_set, 0, NULL);
+                if (region->uniform_buffers && vk_context->so.current_frame < 3) {
+                        desc_set = (VkDescriptorSet)region->uniform_buffers[vk_context->so.current_frame].descriptor;
+                        if (!desc_set) {
+                                log_event(LOG_LEVEL_ERROR, "Invalid descriptor set for region %d", i);
+                                continue;
+                        }
+                } else {
+                        log_event(LOG_LEVEL_ERROR, "Missing uniform buffers for region %d", i);
+                        continue;
+                }
+
+                if (!region->viewport || !region->scissor) {
+                        log_event(LOG_LEVEL_ERROR, "Region missing viewport or scissor");
+                        continue;
+                }
 
                 VkViewport viewport = {
                         .height = height,
@@ -147,13 +197,46 @@ SGE_RESULT sge_vulkan_draw_frame(sge_render *render) {
 
                 vkCmdSetViewport(command_buffer, 0, 1, &viewport);
                 vkCmdSetScissor(command_buffer, 0, 1, &scissor);
+
+                VkPipeline current_pipeline = VK_NULL_HANDLE;
+
+
+
                 for (int r = 0; r < region->renderable_count; ++r) {
                         sge_renderable *renderable = region->renderables[r];
+
+                        if (!renderable || !renderable->mesh) {
+                                log_event(LOG_LEVEL_ERROR, "NULL renderable or mesh at index %d", r);
+                                continue;
+                        }
 
                         log_event(LOG_LEVEL_INFO, "Drawing mesh: vertices=%d, stride=%d, buffer=%p",
                                 renderable->mesh->vertex_count,
                                 renderable->mesh->vertex_size,
                                 renderable->mesh->vertex_buffer.api_handle);
+
+                        if (!renderable->pipeline) {
+                                log_event(LOG_LEVEL_WARNING, "no pipeline for renderable");
+                                continue;
+                        }
+
+                        if (renderable->pipeline && renderable->pipeline_layout) {
+                                if (renderable->pipeline != current_pipeline) {
+                                        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderable->pipeline);
+                                        current_pipeline = renderable->pipeline;
+
+                                        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                               renderable->pipeline_layout, 0, 1, &desc_set, 0, NULL);
+                                }
+                        } else {
+                                if (current_pipeline != vk_context->pipeline) {
+                                        log_event(LOG_LEVEL_WARNING, "fallback global pipeline");
+                                        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_context->pipeline);
+                                        current_pipeline = vk_context->pipeline;
+                                        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                               vk_context->pipeline_layout, 0, 1, &desc_set, 0, NULL);
+                                }
+                        }
 
                         VkBuffer vertex_buffer[] = {renderable->mesh->vertex_buffer.api_handle};
                         VkDeviceSize offsets[] = {0};
@@ -256,7 +339,6 @@ SGE_RESULT sge_vulkan_draw_frame(sge_render *render) {
     //sge_end_frame(render);
     return SGE_SUCCESS;
 }
-
 
 SGE_RESULT sge_vulkan_begin_frame(sge_render *render) {
     sge_vulkan_context *vk_context = render->api_context;
