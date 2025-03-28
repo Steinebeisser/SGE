@@ -2,24 +2,25 @@
 // Created by Geisthardt on 26.02.2025.
 //
 #include <signal.h>
-#include <core/memory_control.h>
 #include <stdio.h>
-#include <utils/steintime.h>
-
-
-#include "core/logging.h"
-#include "core/os_specific/sge_window.h"
-#include <unistd.h>
 #include <windows.h>
-#include <core/input.h>
-#include <renderer/sge_render_file.h>
-#include <renderer/vulkan_renderer/vulkan_renderer.h>
+#include <unistd.h>
 #include <vulkan/vulkan_core.h>
-#include "renderer/sge_render.h"
 
-#include "utils/steinutils.h"
+
+#include "src/core/memory_control.h"
+#include "src/utils/steintime.h"
+#include "src/core/logging.h"
+#include "src/core/os_specific/sge_window.h"
+#include "src/core/input.h"
+#include "src/renderer/sge_render_file.h"
+#include "src/renderer/vulkan_renderer/vulkan_renderer.h"
+#include "src/renderer/sge_render.h"
+#include "src/utils/steinutils.h"
+
 
 void create_cube();
+void create_healthbar();
 
 void seg_fault_handler(int sig) {
        log_event(LOG_LEVEL_FATAL, "SEG FAULT OCCURED: %d", sig);
@@ -75,7 +76,8 @@ int main(void) {
                 .offset_y = 0,
                 .min_depth = 0.0f,
                 .max_depth = 1.0f,
-                .z_index = 0,
+                .z_index = 2,
+                .type = SGE_REGION_3D
         };
 
         sge_region *main_region = sge_region_create(render, &region_setting_3d);
@@ -85,20 +87,21 @@ int main(void) {
 
         //sge_region_add_renderable(main_region, logo_renderable);
 
-        sge_region_settings second_setting_3d = {
+        sge_region_settings second_setting_2d = {
                 .auto_update = true,
                 .auto_scale_on_resize = true,
                 .auto_reposition_on_resize = true,
-                .height = 200,
-                .width = 200,
+                .height = SGE_REGION_FULL_DIMENSION,
+                .width = SGE_REGION_FULL_DIMENSION,
                 .offset_x = 0,
                 .offset_y = 0,
                 .min_depth = 0.0f,
                 .max_depth = 1.0f,
                 .z_index = 1,
+                .type = SGE_REGION_2D
         };
 
-        sge_region *secondary_region = sge_region_create(render, &second_setting_3d);
+        sge_region *secondary_region = sge_region_create(render, &second_setting_2d);
 
         //sge_region_add_renderable(secondary_region, logo_renderable);
 
@@ -254,12 +257,15 @@ int main(void) {
 
 
         create_cube();
+        create_healthbar();
 
 
         SGE_REND_FILE *cube_file = NULL;
         SGE_REND_FILE *pyramid_file = NULL;
+        SGE_REND_FILE *healthbar_file = NULL;
         sge_rend_load("cube.sgerend", &cube_file);
         sge_rend_load("test.sgerend", &pyramid_file);
+        sge_rend_load("healthbar.sgerend", &healthbar_file);
 
         //for (int i = 0; i < file->header.section_count; ++i) {
         //        SGE_REND_SECTION *section = &file->sections[i];
@@ -278,9 +284,14 @@ int main(void) {
         sge_renderable *test = create_renderable_from_rend_file(render, pyramid_file);
         log_event(LOG_LEVEL_INFO, "finished creating test renderable");
         sge_renderable *cube = create_renderable_from_rend_file(render, cube_file);
+        log_event(LOG_LEVEL_INFO, "finished creating cube renderable");
+
+        sge_renderable *healthbar = create_renderable_from_rend_file(render, healthbar_file);
+        log_event(LOG_LEVEL_INFO, "finished creating test renderable");
 
         sge_region_add_renderable(main_region, test);
         sge_region_add_renderable(main_region, cube);
+        sge_region_add_renderable(secondary_region, healthbar);
 
         printf("ADDED REGION\n");
         //printf("%p\n", file->sections[1].data);
@@ -294,6 +305,11 @@ int main(void) {
                 const DWORD start_time = get_current_ms_time();
 
                 sge_region *active_region = sge_region_get_active(render);
+                log_event(LOG_LEVEL_INFO, "checking active region");
+                //if (active_region != NULL && active_region->type == SGE_REGION_2D) {
+                //        log_event(LOG_LEVEL_INFO, "2d region unsetting");
+                //        active_region = NULL;
+                //}
                 int regions_count;
                 sge_region **active_regions = sge_region_get_active_list(render, &regions_count);
                 //for (int i = 0; i < regions_count; ++i) {
@@ -502,4 +518,62 @@ void create_cube() {
     } else {
         printf("Render file saved successfully.\n");
     }
+}
+
+
+void create_healthbar() {
+        typedef struct {
+                float position[2];
+                uint8_t color[4];
+        } UIColoredVertex;
+
+        SGE_MESH_ATTRIBUTE attributes[2] = {
+        {
+            .type = SGE_ATTRIBUTE_POSITION,
+            .format = SGE_FORMAT_FLOAT32,
+            .components = 2,
+            .offset = 0,
+        },
+        {
+            .type = SGE_ATTRIBUTE_COLOR,
+            .format = SGE_FORMAT_UINT8,
+            .components = 4,
+            .offset = 8,
+        }
+    };
+
+    // Define vertices
+        UIColoredVertex healthbar_vertices[6] = {
+                { .position = { 0.0, 0.0}, .color = { 0, 0, 255, 255} },
+                { .position = { 1.0, 1.0}, .color = { 0, 255, 0, 255} },
+                { .position = { 1.0, 0.0}, .color = { 0, 255, 0, 255} },
+                { .position = { 0.0, 1.0}, .color = { 0, 255, 0, 255} },
+                { .position = { 1.0, 1.0}, .color = { 0, 255, 0, 255} },
+                { .position = { 1.0, 01.0}, .color = { 0, 255, 0, 255} },
+        };
+
+    // Create mesh section
+    SGE_REND_SECTION *health_bar_section = sge_create_mesh_section(
+        "health bar",
+        healthbar_vertices,
+        6,
+        sizeof(UIColoredVertex),
+        attributes,
+        2,
+        NULL,
+        0
+    );
+
+    // Save (optional)
+    SGE_REND_SECTION sections[] = { *health_bar_section };
+    SGE_RESULT result = sge_rend_save("healthbar", sections, 1);
+    if (result != SGE_SUCCESS) {
+        fprintf(stderr, "Failed to save render file\n");
+    } else {
+        printf("Render file saved successfully.\n");
+    }
+
+    // Cleanup (not in original, but good practice)
+    free(health_bar_section->data);
+    free(health_bar_section);
 }

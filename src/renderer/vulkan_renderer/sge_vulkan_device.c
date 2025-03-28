@@ -21,7 +21,7 @@ SGE_RESULT sge_vulkan_physical_device_select(sge_render *render) {
         vkEnumeratePhysicalDevices(vk_context->instance, &device_count, devices);
 
         struct highest_score_gpu {
-                uint32_t score;
+                int32_t score;
                 int device_index;
                 bool is_dedicated_gpu;
         };
@@ -40,7 +40,7 @@ SGE_RESULT sge_vulkan_physical_device_select(sge_render *render) {
                 vkGetPhysicalDeviceMemoryProperties(devices[i], &memory_properties);
 
                 const bool is_dedicated = properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
-                uint32_t score = 0;
+                int32_t score = 0;
                 if (is_dedicated) {score += 100; }
                 score += (properties.limits.maxComputeSharedMemorySize / 1024) / 2;
                 score += (properties.limits.maxImageDimension2D / 1024) * 5;

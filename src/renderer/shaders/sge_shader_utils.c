@@ -336,7 +336,7 @@ SGE_RESULT create_raw_shader_file(char *filepath, char *filename, sge_vertex_for
                                         strcat(layout_string, " fragColor");
                                 } break;
                                 default: {
-                                        log_event(LOG_LEVEL_ERROR, "unsupported location attribute");
+                                        log_event(LOG_LEVEL_ERROR, "unsupported location attribute: %d", attr.location);
                                         return SGE_ERROR;
                                 };
                         }

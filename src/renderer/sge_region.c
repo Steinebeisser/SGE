@@ -59,7 +59,7 @@ sge_region *sge_region_create(sge_render *render, sge_region_settings *settings)
         region->auto_update_frames = settings->auto_update;
         region->z_index = settings->z_index;
 
-        region->type = &settings->type;
+        region->type = settings->type;
 
         log_event(LOG_LEVEL_INFO, "creating vk descriptor pool");
         SGE_RESULT descriptor_pool_result = sge_create_descriptor_pool(render, &region->descriptor_pool);
@@ -273,4 +273,17 @@ sge_region **sge_region_get_active_list(sge_render *render, int *regions_count) 
         }
 
         return regions;
+}
+
+float sge_region_get_height(sge_region *region, sge_render *render) {
+        if (region->viewport->height == SGE_REGION_FULL_DIMENSION) {
+                return render->window->height;
+        }
+        return region->viewport->height;
+}
+float sge_region_get_width(sge_region *region, sge_render *render) {
+        if (region->viewport->width == SGE_REGION_FULL_DIMENSION) {
+                return render->window->width;
+        }
+        return region->viewport->width;
 }

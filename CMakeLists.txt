@@ -47,8 +47,7 @@ add_library(SGE
         src/renderer/vulkan_renderer/sge_vulkan_draw.c
 )
 
-add_executable(TEST test.c
-)
-target_link_libraries(SGE PRIVATE winmm Vulkan::Vulkan)
+add_executable(TEST test.c)
+target_link_libraries(SGE PUBLIC winmm Vulkan::Vulkan)
 target_include_directories(TEST PRIVATE ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(TEST PRIVATE SGE winmm Vulkan::Vulkan DbgHelp)
+target_link_libraries(TEST PUBLIC SGE winmm Vulkan::Vulkan DbgHelp)

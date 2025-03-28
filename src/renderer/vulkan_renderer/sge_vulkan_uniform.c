@@ -9,7 +9,8 @@
 
 #include "../../core/logging.h"
 #include "../../core/memory_control.h"
-void sge_m4_set_perspective(m4 mat, float fov_y, float aspect, float near, float far);
+void sge_m4_set_perspective(m4 mat, float fov_y, float aspect, float near_f, float far_f);
+void sge_m4_set_orthographic(m4 mat, float left, float right, float bottom, float top, float near_f, float far_f);
 
 SGE_RESULT sge_vulkan_update_uniform_buffer(sge_render *render, sge_region *region) {
 
@@ -57,14 +58,37 @@ SGE_RESULT sge_vulkan_update_uniform_buffer(sge_render *render, sge_region *regi
                 sge_m4_transpose(view_matrix);
                 //sge_m4_print(view_matrix);
                 copy_memory(ubo.view, view_matrix, sizeof(m4), 0, 0);
-                sge_m4_set_perspective(ubo.proj, 45.0f * 3.14159f / 180.0f, (float)vk_context->sc.surface_capabilities.currentExtent.width / vk_context->sc.surface_capabilities.currentExtent.height, 0.1f, 100.0f);
-                sge_m4_transpose(ubo.proj);
+
+                if (region->type == SGE_REGION_2D) {
+                        float width = sge_region_get_width(region, render);
+                        float height = sge_region_get_height(region, render);
+                        log_event(LOG_LEVEL_INFO, "2D Region Rendering: left=%f right=%f top=%f bottom=%f",
+                            region->scissor->offset_x,
+                            region->scissor->offset_x + width,
+                            region->scissor->offset_y,
+                            region->scissor->offset_y + height);
+                        sge_m4_set_orthographic(ubo.proj,
+                                region->scissor->offset_x,
+                                region->scissor->offset_x + width,
+                                region->scissor->offset_y, region->scissor->offset_y + height,
+                                0.1f,
+                                100.0f);
+                        //printf("ORTHO\n");
+                        //sge_m4_print(ubo.proj);
+                } else if (region->type == SGE_REGION_3D) {
+                        sge_m4_set_perspective(ubo.proj,
+                                45.0f * 3.14159f / 180.0f,
+                                (float)vk_context->sc.surface_capabilities.currentExtent.width / vk_context->sc.surface_capabilities.currentExtent.height,
+                                0.1f,
+                                100.0f);
+                }
                 //printf("PROJECTION MATRIX\n");
                 //sge_m4_print(ubo.proj);
                 //printf("VIEW MATRIX\n");
                 //sge_m4_print(ubo.view);
                 //printf("MODEL MATRIX\n");
                 //sge_m4_print(ubo.model);
+                sge_m4_transpose(ubo.proj);
                 void *data;
                 vkMapMemory(vk_context->device, region->uniform_buffers[vk_context->so.current_frame].memory, 0, sizeof(ubo), 0, &data);
                 copy_memory(data, &ubo, sizeof(ubo), 0, 0);
@@ -85,4 +109,22 @@ void sge_m4_set_perspective(m4 mat, float fov_y, float aspect, float near_f, flo
         mat[2][3] = -(2.0f * far_f * near_f) / (far_f - near_f);
         mat[3][2] = -1.0f;
         mat[3][3] = 0.0f;
+}
+
+void sge_m4_set_orthographic(m4 mat, float left, float right, float bottom, float top, float near_f, float far_f) {
+        sge_m4_set_identity(mat);
+        return;
+        for (int i = 0; i < 4; i++) {
+                for (int j = 0; j < 4; j++) {
+                        mat[i][j] = 0.0f;
+                }
+        }
+        mat[0][0] = 2.0f / (right - left);
+        mat[1][1] = 2.0f / (top - bottom);
+        mat[2][2] = -2.0f / (far_f - near_f);
+        mat[3][3] = 1.0f;
+        mat[0][3] = -((right + left) / (right - left));
+        mat[1][3] = -((top + bottom) / (top - bottom));
+        mat[2][3] = -((far_f + near_f) / (far_f - near_f));
+
 }
