@@ -37,6 +37,9 @@ static int longest_tag_name = 0;
 static size_t tracker_memory_usage = 0;
 static size_t total_memory_usage = 0;
 
+uint32_t amount_allocations = 0;
+uint32_t amount_freeing = 0;
+
 const char *memory_tag_to_string(memory_tag tag);
 int amount_chars_in_int(int number);
 void *get_next_allocation_memory_tag_usage(const void *node);
@@ -55,6 +58,8 @@ void *allocate_memory(const size_t size, const memory_tag tag) {
                 log_event(LOG_LEVEL_ERROR, "Failed to track Memory Allocation");
                 return NULL;
         }
+
+        amount_allocations++;
 
         info->ptr = ptr;
         info->size = size;
@@ -142,6 +147,7 @@ void free_memory(void *ptr,const memory_tag tag) {
 
         allocation_info **current = &allocation_list;
         allocation_info *prev = NULL;
+        amount_freeing++;
 
         while (*current) {
                 if ((*current)->ptr == ptr) {
@@ -345,4 +351,8 @@ uint32_t find_memory_type(sge_render *render, uint32_t type_filter, VkMemoryProp
 
         log_event(LOG_LEVEL_ERROR, "Failed to find suitable memory type");
         return UINT32_MAX;
+}
+
+void print_uses() {
+        printf("ALLOCATIONS: %d\nFREEING: %d\n", amount_allocations, amount_freeing);
 }

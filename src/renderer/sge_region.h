@@ -39,7 +39,7 @@ typedef struct sge_uniform_buffer_type {
 } sge_uniform_buffer_type;
 
 typedef struct sge_region {
-        sge_region_type                 *type;
+        sge_region_type                 type;
         sge_camera                      *camera;
         sge_viewport                    *viewport;
         sge_scissor                     *scissor;
@@ -62,4 +62,8 @@ SGE_RESULT sge_region_resize_auto_resizing_regions(sge_render *render, float old
 
 sge_region *sge_region_get_active(sge_render *render);
 sge_region **sge_region_get_active_list(sge_render *render, int *regions_count);
+
+float sge_region_get_width(sge_region *region, sge_render *render);
+float sge_region_get_height(sge_region *region, sge_render *render);
+
 #endif //SGE_REGION_H

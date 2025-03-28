@@ -253,8 +253,8 @@ SGE_RESULT sge_vulkan_pipeline_create_specific_format(
 
 
         log_event(LOG_LEVEL_INFO, "Getting shader paths");
-        shader_paths[0] = sge_get_vertex_shader_path_for_format(render, format, SGE_TRUE);
-        shader_paths[4] = sge_get_fragment_shader_path_for_format(render, format, SGE_TRUE);
+        shader_paths[0] = sge_get_vertex_shader_path_for_format(render, format, settings->is_3d);
+        shader_paths[4] = sge_get_fragment_shader_path_for_format(render, format, settings->is_3d);
 
         if (settings->tesselation_enabled) {
                 //todo
@@ -428,7 +428,7 @@ SGE_RESULT sge_vulkan_pipeline_create_specific_format(
                  .pNext = NULL,
                  .flags = 0,
                  .depthTestEnable = settings->is_3d,
-                 .depthWriteEnable = VK_TRUE,
+                 .depthWriteEnable = settings->is_3d,
                  .depthCompareOp = VK_COMPARE_OP_LESS,
                  .depthBoundsTestEnable = VK_FALSE,
                  .stencilTestEnable = VK_FALSE,

@@ -22,6 +22,19 @@ SGE_RESULT sge_vulkan_create_renderable_resources(sge_render *render, sge_render
                 return SGE_ERROR;
         }
 
+        SGE_BOOL is_3d = SGE_FALSE;
+
+        for (int i = 0; i < renderable->mesh->attribute_count; ++i) {
+                SGE_MESH_ATTRIBUTE attribute = renderable->mesh->attributes[i];
+                if (attribute.type == SGE_ATTRIBUTE_POSITION) {
+                        if (attribute.components == 2) {
+                                is_3d = SGE_FALSE;
+                        } else if(attribute.components == 3) {
+                                is_3d = SGE_TRUE;
+                        }
+                }
+        }
+
         sge_vulkan_convert_sge_format_to_vulkan_format(renderable);
 
         VkBufferCreateInfo vertex_buffer_create_info = {
@@ -106,7 +119,7 @@ SGE_RESULT sge_vulkan_create_renderable_resources(sge_render *render, sge_render
                         settings = (sge_pipeline_settings) {
                                 .cull_mode = SGE_CULL_MODE_NONE,
                                 .front_face = SGE_FRONT_FACE_COUNTER_CLOCKWISE,
-                                .is_3d = SGE_TRUE,
+                                .is_3d = is_3d,
                                 .polygon_mode = SGE_POLYGON_MODE_FILL
                         };
 
