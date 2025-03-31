@@ -2,7 +2,7 @@
 // Created by Geisthardt on 27.02.2025.
 //
 
-#include "sge_window.h"
+#include "core/platform/sge_window.h"
 
 #ifdef Unix
 

@@ -2,7 +2,7 @@
 // Created by Geisthardt on 11.03.2025.
 //
 
-#include "sge_camera.h"
+#include "renderer/sge_camera.h"
 
 #include <stdio.h>
 

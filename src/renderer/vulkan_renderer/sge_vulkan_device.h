@@ -5,7 +5,7 @@
 #ifndef SGE_VULKAN_DEVICE_H
 #define SGE_VULKAN_DEVICE_H
 
-#include "../sge_render.h"
+#include "renderer/sge_render.h"
 
 SGE_RESULT sge_vulkan_physical_device_select(sge_render *render);
 SGE_RESULT sge_vulkan_physical_device_remove(sge_render *render);

@@ -3,8 +3,9 @@
 //
 
 #include "sge_vulkan_command.h"
-#include "../../core/logging.h"
-#include "../../core/memory_control.h"
+#include "core/sge_internal_logging.h"
+#include "core/memory_control.h"
+#include "vulkan_structs.h"
 
 
 SGE_RESULT sge_vulkan_command_pool_create(sge_render *render) {
@@ -40,7 +41,7 @@ SGE_RESULT sge_vulkan_command_buffers_allocate(sge_render *render) {
 
         vk_context->command_buffer = allocate_memory(sizeof(vk_context->command_buffer) * command_buffer_count, MEMORY_TAG_VULKAN);
         if (vk_context->command_buffer == NULL) {
-                log_event(LOG_LEVEL_FATAL, "failed to allocate command buffer");
+                log_internal_event(LOG_LEVEL_FATAL, "failed to allocate command buffer");
                 return SGE_ERROR_FAILED_ALLOCATION;
         }
 

@@ -4,12 +4,16 @@
 
 #include "sge_vulkan_renderables.h"
 
-#include "../../core/logging.h"
-#include "../../core/memory_control.h"
+#include "sge_vulkan_memory.h"
+#include "sge_vulkan_pipeline.h"
+#include "core/sge_internal_logging.h"
+#include "core/memory_control.h"
+#include "vulkan_structs.h"
+#include "renderer/shader/sge_shader_utils.h"
 
 SGE_RESULT sge_vulkan_create_renderable_resources(sge_render *render, sge_renderable *renderable) {
         if (render == NULL ||renderable == NULL || renderable->mesh == NULL) {
-                log_event(LOG_LEVEL_ERROR, "tried to creating renderable without initializing render or a valid renderable");
+                log_internal_event(LOG_LEVEL_ERROR, "tried to creating renderable without initializing render or a valid renderable");
                 return SGE_ERROR;
         }
 
@@ -18,7 +22,7 @@ SGE_RESULT sge_vulkan_create_renderable_resources(sge_render *render, sge_render
         sge_mesh *mesh = renderable->mesh;
 
         if (!mesh->vertex_buffer.data) {
-                log_event(LOG_LEVEL_ERROR, "no vertex buiffer data passed for renderable creation");
+                log_internal_event(LOG_LEVEL_ERROR, "no vertex buiffer data passed for renderable creation");
                 return SGE_ERROR;
         }
 
@@ -47,7 +51,7 @@ SGE_RESULT sge_vulkan_create_renderable_resources(sge_render *render, sge_render
         VkBuffer vertex_buffer;
         VkResult vertex_buffer_result = vkCreateBuffer(vk_context->device, &vertex_buffer_create_info, vk_context->sge_allocator, &vertex_buffer);
         if (vertex_buffer_result != VK_SUCCESS) {
-                log_event(LOG_LEVEL_ERROR, "Failed to create vertex buffer");
+                log_internal_event(LOG_LEVEL_ERROR, "Failed to create vertex buffer");
                 return SGE_ERROR;
         }
 
@@ -66,14 +70,14 @@ SGE_RESULT sge_vulkan_create_renderable_resources(sge_render *render, sge_render
         if (vkAllocateMemory(vk_context->device, &vertex_alloc_info,
                             vk_context->sge_allocator, &vertex_memory) != VK_SUCCESS) {
             vkDestroyBuffer(vk_context->device, vertex_buffer, vk_context->sge_allocator);
-            log_event(LOG_LEVEL_ERROR, "Failed to allocate vertex buffer memory");
+            log_internal_event(LOG_LEVEL_ERROR, "Failed to allocate vertex buffer memory");
             return SGE_ERROR;
         }
 
         if (vkBindBufferMemory(vk_context->device, vertex_buffer, vertex_memory, 0) != VK_SUCCESS) {
             vkFreeMemory(vk_context->device, vertex_memory, vk_context->sge_allocator);
             vkDestroyBuffer(vk_context->device, vertex_buffer, vk_context->sge_allocator);
-            log_event(LOG_LEVEL_ERROR, "Failed to bind vertex buffer memory");
+            log_internal_event(LOG_LEVEL_ERROR, "Failed to bind vertex buffer memory");
             return SGE_ERROR;
         }
 
@@ -82,7 +86,7 @@ SGE_RESULT sge_vulkan_create_renderable_resources(sge_render *render, sge_render
                       mesh->vertex_buffer.size, 0, &mapped_data) != VK_SUCCESS) {
             vkFreeMemory(vk_context->device, vertex_memory, vk_context->sge_allocator);
             vkDestroyBuffer(vk_context->device, vertex_buffer, vk_context->sge_allocator);
-            log_event(LOG_LEVEL_ERROR, "Failed to map vertex buffer memory");
+            log_internal_event(LOG_LEVEL_ERROR, "Failed to map vertex buffer memory");
             return SGE_ERROR;
         }
 
@@ -109,7 +113,7 @@ SGE_RESULT sge_vulkan_create_renderable_resources(sge_render *render, sge_render
 
 
                 if (renderable_pipeline == VK_NULL_HANDLE) {
-                        log_event(LOG_LEVEL_INFO, "Need to create new pipeline");
+                        log_internal_event(LOG_LEVEL_INFO, "Need to create new pipeline");
 
                         VkPipeline pipeline;
                         VkPipelineLayout pipeline_layout;
@@ -125,7 +129,7 @@ SGE_RESULT sge_vulkan_create_renderable_resources(sge_render *render, sge_render
 
                         sge_vulkan_pipeline_settings *vulkan_settings = transform_pipeline_settings_to_vulkan_specific(&settings);
 
-                        log_event(LOG_LEVEL_INFO, "creating pipeline with settings");
+                        log_internal_event(LOG_LEVEL_INFO, "creating pipeline with settings");
                         if (sge_vulkan_pipeline_create_specific_format(
                                 render,
                                 mesh->format,
@@ -133,9 +137,9 @@ SGE_RESULT sge_vulkan_create_renderable_resources(sge_render *render, sge_render
                                 &pipeline,
                                 &pipeline_layout
                                 ) != SGE_SUCCESS) {
-                                log_event(LOG_LEVEL_ERROR, "failed to create pipeline");
+                                log_internal_event(LOG_LEVEL_ERROR, "failed to create pipeline");
                         }
-                        log_event(LOG_LEVEL_INFO, "created vulkan pipeline");
+                        log_internal_event(LOG_LEVEL_INFO, "created vulkan pipeline");
 
                         renderable_pipeline = pipeline;
                         renderable_pipeline_layout = pipeline_layout;
@@ -186,7 +190,7 @@ SGE_BOOL compare_formats(sge_vertex_format *a, sge_vertex_format *b) {
 SGE_RESULT sge_vulkan_convert_sge_format_to_vulkan_format(sge_renderable *renderable) {
         sge_vertex_format *format = allocate_memory(sizeof(sge_vertex_format), MEMORY_TAG_RENDERER);
         if (format == NULL) {
-            log_event(LOG_LEVEL_FATAL, "failed to allocate vertex format");
+            log_internal_event(LOG_LEVEL_FATAL, "failed to allocate vertex format");
             return SGE_ERROR;
         }
 

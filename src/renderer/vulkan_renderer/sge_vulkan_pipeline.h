@@ -5,7 +5,8 @@
 #ifndef SGE_VULKAN_PIPELINE_H
 #define SGE_VULKAN_PIPELINE_H
 
-#include "../sge_render.h"
+#include "renderer/sge_render.h"
+#include "vulkan_structs.h"
 
 typedef struct sge_vulkan_pipeline_settings sge_vulkan_pipeline_settings;
 

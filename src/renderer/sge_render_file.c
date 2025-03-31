@@ -2,13 +2,14 @@
 // Created by Geisthardt on 17.03.2025.
 //
 
-#include "sge_render_file.h"
+#include "renderer/sge_render_file.h"
 
 #include <stdio.h>
 
-#include "../SGE.h"
-#include "../core/logging.h"
-#include "../core/memory_control.h"
+#include "sge_types.h"
+#include "sge_version.h"
+#include "core/sge_internal_logging.h"
+#include "core/memory_control.h"
 
 
 uint32_t calculate_crc32(void *data, size_t length) {
@@ -32,7 +33,7 @@ SGE_RESULT sge_rend_save(char *filename, SGE_REND_SECTION *sections, uint16_t se
         //todo make sure file not exist, make savepath configurable
         FILE *fd = fopen(save_filename, "wb");
         if (!fd) {
-                log_event(LOG_LEVEL_FATAL, "failed to open file");
+                log_internal_event(LOG_LEVEL_FATAL, "failed to open file");
                 return SGE_ERROR;
         }
 
@@ -50,7 +51,7 @@ SGE_RESULT sge_rend_save(char *filename, SGE_REND_SECTION *sections, uint16_t se
 
         void *global_header = allocate_memory(SGE_REND_HEADER_FIXED_SIZE + extension_size, MEMORY_TAG_RENDERER);
         if (global_header == NULL) {
-                log_event(LOG_LEVEL_FATAL, "FAiled to allocate for file save header");
+                log_internal_event(LOG_LEVEL_FATAL, "FAiled to allocate for file save header");
                 return SGE_ERROR_FAILED_ALLOCATION;
         }
 
@@ -118,23 +119,23 @@ SGE_RESULT sge_rend_save(char *filename, SGE_REND_SECTION *sections, uint16_t se
                 //TYPE
                 copy_memory(section_header_buffer, &section.section_header.type, sizeof(uint16_t), section_buffer_offset, 0);
                 section_buffer_offset += sizeof(section.section_header.type);
-                printf("%i\n", section_buffer_offset);
+                //printf("%i\n", section_buffer_offset);
                 //SECTION OFFSET
                 uint64_t section_offset = file_offset + section_header_size;
                 copy_memory(section_header_buffer, &section_offset, sizeof(uint64_t), section_buffer_offset, 0);
                 section_buffer_offset += sizeof(section_offset);
-                printf("%i\n", section_buffer_offset);
+                //printf("%i\n", section_buffer_offset);
                 //DATA SIZE
                 copy_memory(section_header_buffer, &section.section_header.data_size, sizeof(uint64_t), section_buffer_offset, 0);
                 section_buffer_offset += sizeof(section.section_header.data_size);
-                printf("%i\n", section_buffer_offset);
+                //printf("%i\n", section_buffer_offset);
                 //EXTENSIONS
                 copy_memory(section_header_buffer, &section.section_header.extension_count, sizeof(uint16_t), section_buffer_offset, 0);
                 section_buffer_offset += sizeof(section.section_header.extension_count);
-                printf("%i\n", section_buffer_offset);
+                //printf("%i\n", section_buffer_offset);
                 copy_memory(section_header_buffer, &section.section_header.extensions, section.section_header.extension_size, section_buffer_offset, 0);
                 section_buffer_offset += section.section_header.extension_size;
-                printf("%i\n", section_buffer_offset);
+                //printf("%i\n", section_buffer_offset);
                 //NAME
                 copy_memory(section_header_buffer, &section.section_header.name, sizeof(section.section_header.name), section_buffer_offset, 0);
                 section_buffer_offset += sizeof(section.section_header.name);
@@ -143,10 +144,10 @@ SGE_RESULT sge_rend_save(char *filename, SGE_REND_SECTION *sections, uint16_t se
                 section.section_header.checksum = section_header_checksum;
                 copy_memory(section_header_buffer, &section_header_checksum, sizeof(uint32_t), section_buffer_offset, 0);
                 section_buffer_offset += sizeof(section_header_checksum);
-                printf("%i\n", section_buffer_offset);
+                //printf("%i\n", section_buffer_offset);
                 //SIZE CHECK
                 if (section_buffer_offset != SGE_REND_SECTION_HEADER_FIXED_SIZE + section.section_header.extension_size) {
-                        log_event(LOG_LEVEL_FATAL, "wrong section header - sgerend");
+                        log_internal_event(LOG_LEVEL_FATAL, "wrong section header - sgerend");
                         return SGE_ERROR;
                 }
                 //WRITE FILE
@@ -179,13 +180,13 @@ SGE_RESULT sge_rend_save(char *filename, SGE_REND_SECTION *sections, uint16_t se
 SGE_RESULT sge_rend_load(char *filename, SGE_REND_FILE **outFile) {
         FILE *fd = fopen(filename, "rb");
         if (!fd) {
-            log_event(LOG_LEVEL_ERROR, "failed to open file");
+            log_internal_event(LOG_LEVEL_ERROR, "failed to open file");
             return SGE_ERROR;
         }
 
         *outFile = (SGE_REND_FILE*)allocate_memory(sizeof(SGE_REND_FILE), MEMORY_TAG_RENDERER);
         if (*outFile == NULL) {
-            log_event(LOG_LEVEL_ERROR, "Memory allocation failed for outFile");
+            log_internal_event(LOG_LEVEL_ERROR, "Memory allocation failed for outFile");
             return SGE_ERROR;
         }
 
@@ -197,12 +198,12 @@ SGE_RESULT sge_rend_load(char *filename, SGE_REND_FILE **outFile) {
             fread(&patch, sizeof(uint16_t), 1, fd) != 1 ||
             fread(&section_count, sizeof(uint16_t), 1, fd) != 1 ||
             fread(&extension_count, sizeof(uint16_t), 1, fd) != 1) {
-            log_event(LOG_LEVEL_FATAL, "Failed to read global header");
+            log_internal_event(LOG_LEVEL_FATAL, "Failed to read global header");
             return SGE_ERROR;
         }
 
         if (memcmp(magic, SGE_REND_MAGIC_NUMBER, 8) != 0) {
-            log_event(LOG_LEVEL_FATAL, "Invalid Magic");
+            log_internal_event(LOG_LEVEL_FATAL, "Invalid Magic");
             return SGE_ERROR;
         }
 
@@ -210,7 +211,7 @@ SGE_RESULT sge_rend_load(char *filename, SGE_REND_FILE **outFile) {
 
         (*outFile)->sections = (SGE_REND_SECTION*)allocate_memory(sizeof(SGE_REND_SECTION) * section_count, MEMORY_TAG_RENDERER);
         if ((*outFile)->sections == NULL) {
-            log_event(LOG_LEVEL_ERROR, "Memory allocation failed for sections");
+            log_internal_event(LOG_LEVEL_ERROR, "Memory allocation failed for sections");
             return SGE_ERROR;
         }
 
@@ -221,20 +222,20 @@ SGE_RESULT sge_rend_load(char *filename, SGE_REND_FILE **outFile) {
                 void *extension_data;
                 for (int i = 0; i < extension_count; ++i) {
                         if (fread(&extension_type, sizeof(uint16_t), 1, fd) != 1) {
-                            log_event(LOG_LEVEL_FATAL, "Invalid Extension Type");
+                            log_internal_event(LOG_LEVEL_FATAL, "Invalid Extension Type");
                             return SGE_ERROR;
                         }
                         if (fread(&extension_data_size, sizeof(uint32_t), 1, fd) != 1) {
-                            log_event(LOG_LEVEL_FATAL, "Invalid Extension Size");
+                            log_internal_event(LOG_LEVEL_FATAL, "Invalid Extension Size");
                             return SGE_ERROR;
                         }
                         extension_data = allocate_memory(extension_data_size, MEMORY_TAG_RENDERER);
                         if (extension_data == NULL) {
-                            log_event(LOG_LEVEL_FATAL, "Failed to allocate extension data");
+                            log_internal_event(LOG_LEVEL_FATAL, "Failed to allocate extension data");
                             return SGE_ERROR;
                         }
                         if (fread(extension_data, extension_data_size, 1, fd) != 1) {
-                            log_event(LOG_LEVEL_FATAL, "Invalid Extension Data");
+                            log_internal_event(LOG_LEVEL_FATAL, "Invalid Extension Data");
                             free_memory(extension_data, MEMORY_TAG_RENDERER);
                             return SGE_ERROR;
                         }
@@ -243,36 +244,36 @@ SGE_RESULT sge_rend_load(char *filename, SGE_REND_FILE **outFile) {
         }
 
         if (fread(&(*outFile)->header.name, sizeof((*outFile)->header.name), 1, fd) != 1) {
-                log_event(LOG_LEVEL_FATAL, "Failed to read name");
+                log_internal_event(LOG_LEVEL_FATAL, "Failed to read name");
                 return SGE_ERROR;
         }
 
         uint32_t global_header_checksum;
         if (fread(&global_header_checksum, sizeof(uint32_t), 1, fd) != 1) {
-                log_event(LOG_LEVEL_FATAL, "Failed to read global header checksum");
+                log_internal_event(LOG_LEVEL_FATAL, "Failed to read global header checksum");
                 return SGE_ERROR;
         }
 
         //todo verify checksum
-        printf("Checksum: %d\n", global_header_checksum);
+        //printf("Checksum: %d\n", global_header_checksum);
 
         for (uint16_t i = 0; i < section_count; ++i) {
                 SGE_REND_SECTION *section = &(*outFile)->sections[i];
 
                 if (fread(&section->section_header.type, sizeof(uint16_t), 1, fd) != 1) {
-                    log_event(LOG_LEVEL_FATAL, "Failed to read section type");
+                    log_internal_event(LOG_LEVEL_FATAL, "Failed to read section type");
                     return SGE_ERROR;
                 }
                 if (fread(&section->section_header.offset, sizeof(uint64_t), 1, fd) != 1) {
-                    log_event(LOG_LEVEL_FATAL, "Failed to read section offset");
+                    log_internal_event(LOG_LEVEL_FATAL, "Failed to read section offset");
                     return SGE_ERROR;
                 }
                 if (fread(&section->section_header.data_size, sizeof(uint64_t), 1, fd) != 1) {
-                    log_event(LOG_LEVEL_FATAL, "Failed to read data size");
+                    log_internal_event(LOG_LEVEL_FATAL, "Failed to read data size");
                     return SGE_ERROR;
                 }
                 if (fread(&section->section_header.extension_count, sizeof(uint16_t), 1, fd) != 1) {
-                    log_event(LOG_LEVEL_FATAL, "Failed to read extension count");
+                    log_internal_event(LOG_LEVEL_FATAL, "Failed to read extension count");
                     return SGE_ERROR;
                 }
 
@@ -280,22 +281,22 @@ SGE_RESULT sge_rend_load(char *filename, SGE_REND_FILE **outFile) {
                 if (section->section_header.extension_count > 0) {
                     section->section_header.extensions = allocate_memory(section->section_header.extension_count * sizeof(SGE_REND_EXTENSION), MEMORY_TAG_RENDERER);
                         if(section->section_header.extensions == NULL){
-                            log_event(LOG_LEVEL_FATAL, "Failed to allocate section extensions");
+                            log_internal_event(LOG_LEVEL_FATAL, "Failed to allocate section extensions");
                             return SGE_ERROR;
                         }
                         if (fread(section->section_header.extensions, section->section_header.extension_size, 1, fd) != 1) {
-                            log_event(LOG_LEVEL_FATAL, "Failed to read section extensions");
+                            log_internal_event(LOG_LEVEL_FATAL, "Failed to read section extensions");
                             return SGE_ERROR;
                         }
                 }
 
                 if (fread(&section->section_header.name, sizeof(section->section_header.name), 1, fd) != 1) {
-                    log_event(LOG_LEVEL_FATAL, "Failed to read name");
+                    log_internal_event(LOG_LEVEL_FATAL, "Failed to read name");
                     return SGE_ERROR;
                 }
 
                 if (fread(&section->section_header.checksum, sizeof(uint32_t), 1, fd) != 1) {
-                    log_event(LOG_LEVEL_FATAL, "Failed to read checksum");
+                    log_internal_event(LOG_LEVEL_FATAL, "Failed to read checksum");
                     return SGE_ERROR;
                 }
 
@@ -305,12 +306,12 @@ SGE_RESULT sge_rend_load(char *filename, SGE_REND_FILE **outFile) {
                 section->data = allocate_memory(section->section_header.data_size, MEMORY_TAG_RENDERER);
                 printf("SECTION %d Data size: %llu\n", i, section->section_header.data_size);
                 if (section->data == NULL) {
-                    log_event(LOG_LEVEL_FATAL, "Failed to allocate section data");
+                    log_internal_event(LOG_LEVEL_FATAL, "Failed to allocate section data");
                     return SGE_ERROR;
                 }
 
                 if (fread(section->data, section->section_header.data_size, 1, fd) != 1) {
-                    log_event(LOG_LEVEL_FATAL, "Failed to read data");
+                    log_internal_event(LOG_LEVEL_FATAL, "Failed to read data");
                     return SGE_ERROR;
                 }
         }
@@ -320,10 +321,10 @@ SGE_RESULT sge_rend_load(char *filename, SGE_REND_FILE **outFile) {
 
 
 SGE_MESH_DATA *sge_parse_mesh_data(void *raw_data, size_t data_size) {
-        printf("data size: %llu\n",     data_size);
+        //printf("data size: %llu\n",     data_size);
         SGE_MESH_DATA *mesh_data = allocate_memory(sizeof(SGE_MESH_DATA), MEMORY_TAG_RENDERER);
         if (mesh_data == NULL) {
-                log_event(LOG_LEVEL_FATAL, "failed allocate for mesh data");
+                log_internal_event(LOG_LEVEL_FATAL, "failed allocate for mesh data");
                 return NULL;
         }
 
@@ -341,7 +342,7 @@ SGE_MESH_DATA *sge_parse_mesh_data(void *raw_data, size_t data_size) {
 
         mesh_data->attributes = allocate_memory(sizeof(SGE_MESH_ATTRIBUTE) * mesh_data->attribute_count, MEMORY_TAG_RENDERER);
         if (mesh_data->attributes == NULL) {
-                log_event(LOG_LEVEL_FATAL, "failed to allocate attributes");
+                log_internal_event(LOG_LEVEL_FATAL, "failed to allocate attributes");
                 return NULL;
         }
 
@@ -363,7 +364,7 @@ SGE_MESH_DATA *sge_parse_mesh_data(void *raw_data, size_t data_size) {
         size_t vertex_data_size = mesh_data->vertex_count * mesh_data->vertex_size;
         mesh_data->vertex_data = allocate_memory(vertex_data_size, MEMORY_TAG_RENDERER);
         if (mesh_data->vertex_data == NULL) {
-                log_event(LOG_LEVEL_FATAL, "failed to allocate vertex data");
+                log_internal_event(LOG_LEVEL_FATAL, "failed to allocate vertex data");
                 return NULL;
         }
 
@@ -438,7 +439,7 @@ SGE_REND_SECTION *sge_create_mesh_section(
 
         uint8_t *data = allocate_memory(total_data_size, MEMORY_TAG_RENDERER);
         if (data == NULL) {
-                log_event(LOG_LEVEL_FATAL, "failed to alloc for data");
+                log_internal_event(LOG_LEVEL_FATAL, "failed to alloc for data");
                 return NULL;
         }
 

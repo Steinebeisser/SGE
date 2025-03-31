@@ -5,7 +5,7 @@
 #ifndef SGE_VULKAN_BUFFER_H
 #define SGE_VULKAN_BUFFER_H
 
-#include "../sge_render.h"
+#include "renderer/sge_render.h"
 
 SGE_RESULT sge_vulkan_uniform_buffer_create(sge_render *render);
 SGE_RESULT sge_vulkan_buffer_create(sge_render *render, void **buffer_ptr);

@@ -2,16 +2,16 @@
 // Created by Geisthardt on 28.02.2025.
 //
 
-#include "memory_control.h"
+#include "core/memory_control.h"
 
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "logging.h"
 #include <string.h>
 
-#include "../utils/steinutils.h"
+#include "core/sge_internal_logging.h"
+#include "utils/sge_utils.h"
 
 extern bool started_logging;
 
@@ -48,14 +48,14 @@ void *allocate_memory(const size_t size, const memory_tag tag) {
         void *ptr = malloc(size);
         zero_memory(ptr, size, 0);
         if (!ptr) {
-                log_event(LOG_LEVEL_ERROR, "Failed allocating Memory");
+                log_internal_event(LOG_LEVEL_ERROR, "Failed allocating Memory");
                 return NULL;
         }
 
         allocation_info *info = malloc(sizeof(allocation_info));
         if (!info) {
                 free(ptr);
-                log_event(LOG_LEVEL_ERROR, "Failed to track Memory Allocation");
+                log_internal_event(LOG_LEVEL_ERROR, "Failed to track Memory Allocation");
                 return NULL;
         }
 
@@ -69,14 +69,14 @@ void *allocate_memory(const size_t size, const memory_tag tag) {
 
         char memory_message[256];
         snprintf(memory_message, sizeof(memory_message), "Allocated %d Bytes of Memory for Tag %s", size, memory_tag_to_string(tag));
-        //log_event(LOG_LEVEL_INFO, memory_message);
+        //log_internal_event(LOG_LEVEL_INFO, memory_message);
 
 
         memory_tag_usage *tag_usage = memory_tag_usage_tracker;
         bool tag_found = false;
 
         if (!tag_usage) {
-                log_event(LOG_LEVEL_ERROR, "Failed to track Tag Usage");
+                log_internal_event(LOG_LEVEL_ERROR, "Failed to track Tag Usage");
                 free(tag_usage);
         } else {
                 while (tag_usage != NULL) {
@@ -98,7 +98,7 @@ void *allocate_memory(const size_t size, const memory_tag tag) {
                         memory_tag_usage_tracker = new_memory_tag_usage;
                         const int tag_length = strlen(memory_tag_to_string(tag));
                         //printf("TAG LENGTH: %d\n", tag_length);
-                        printf("MEMORY TAG STRING: %s\n", memory_tag_to_string(tag));
+                        //printf("MEMORY TAG STRING: %s\n", memory_tag_to_string(tag));
                         if (tag_length > longest_tag_name) {
                                 longest_tag_name = tag_length;
                         }
@@ -117,11 +117,11 @@ void *allocate_memory(const size_t size, const memory_tag tag) {
 
         char tracker_memory_message[256];
         snprintf(tracker_memory_message, sizeof(tracker_memory_message), "Memory Tracker now uses %d Bytes of Memory", tracker_memory_usage);
-        //log_event(LOG_LEVEL_INFO, tracker_memory_message);
+        //log_internal_event(LOG_LEVEL_INFO, tracker_memory_message);
 
         char total_memory_usage_message[256];
         snprintf(total_memory_usage_message, sizeof(total_memory_usage_message), "Total Memory Used: %d", total_memory_usage);
-        //log_event(LOG_LEVEL_INFO, total_memory_usage_message);
+        //log_internal_event(LOG_LEVEL_INFO, total_memory_usage_message);
 
         return ptr;
 }
@@ -141,7 +141,7 @@ const char *memory_tag_to_string(const memory_tag tag) {
 
 void free_memory(void *ptr,const memory_tag tag) {
         if (!ptr) {
-                log_event(LOG_LEVEL_ERROR, "Tried to free memory without passing pointer");
+                log_internal_event(LOG_LEVEL_ERROR, "Tried to free memory without passing pointer");
                 return;
         }
 
@@ -167,7 +167,7 @@ void free_memory(void *ptr,const memory_tag tag) {
                                         if (current_tag->usage < to_free->size) {
                                                 char memory_underflow_msg[256];
                                                 snprintf(memory_underflow_msg, sizeof(memory_underflow_msg), "Memory usage underflow detected for tag %s", memory_tag_to_string(current_tag->tag));
-                                                log_event(LOG_LEVEL_ERROR, memory_underflow_msg);
+                                                log_internal_event(LOG_LEVEL_ERROR, memory_underflow_msg);
                                                 current_tag->usage = 0;
                                         } else {
                                                 current_tag->usage -= to_free->size;
@@ -199,18 +199,18 @@ void free_memory(void *ptr,const memory_tag tag) {
                         char freed_memory_msg[256];
                         snprintf(freed_memory_msg, sizeof(freed_memory_msg), "Freed %d Bytes of Memory for Tag %s",
                                 to_free->size, memory_tag_to_string(tag));
-                        //log_event(LOG_LEVEL_INFO, freed_memory_msg);
+                        //log_internal_event(LOG_LEVEL_INFO, freed_memory_msg);
 
 
                         char tracker_memory_message[256];
                         snprintf(tracker_memory_message, sizeof(tracker_memory_message), "Memory Tracker now uses %d Bytes of Memory",
                                 tracker_memory_usage);
-                        //log_event(LOG_LEVEL_INFO, tracker_memory_message);
+                        //log_internal_event(LOG_LEVEL_INFO, tracker_memory_message);
 
                         char total_memory_usage_message[256];
                         snprintf(total_memory_usage_message, sizeof(total_memory_usage_message), "Total Memory Used: %d",
                                 total_memory_usage);
-                        //log_event(LOG_LEVEL_INFO, total_memory_usage_message);
+                        //log_internal_event(LOG_LEVEL_INFO, total_memory_usage_message);
 
                         free(to_free);
                         free(ptr);
@@ -220,7 +220,7 @@ void free_memory(void *ptr,const memory_tag tag) {
                 current = &((*current)->next);
         }
 
-        log_event(LOG_LEVEL_ERROR, "Tried to free untracked Memory");
+        log_internal_event(LOG_LEVEL_ERROR, "Tried to free untracked Memory");
  }
 
 void *reallocate_memory(void *old_ptr, size_t new_size, memory_tag new_tag) {
@@ -237,7 +237,7 @@ void *reallocate_memory(void *old_ptr, size_t new_size, memory_tag new_tag) {
         }
 
         if (!info) {
-                log_event(LOG_LEVEL_ERROR, "Tried to reallocate untracked Memory");
+                log_internal_event(LOG_LEVEL_ERROR, "Tried to reallocate untracked Memory");
                 return NULL;
         }
 
@@ -250,7 +250,7 @@ void *reallocate_memory(void *old_ptr, size_t new_size, memory_tag new_tag) {
 
         void *new_ptr = allocate_memory(new_size, new_tag);
         if (!new_ptr) {
-                log_event(LOG_LEVEL_ERROR, "Failed to allocate new memory block during reallocation");
+                log_internal_event(LOG_LEVEL_ERROR, "Failed to allocate new memory block during reallocation");
                 return NULL;
         }
 
@@ -265,7 +265,7 @@ void *reallocate_memory(void *old_ptr, size_t new_size, memory_tag new_tag) {
 
 void *zero_memory(void *ptr, const size_t size, const int offset) {
         if (ptr == NULL) {
-                log_event(LOG_LEVEL_ERROR, "Tried to zero memory but didnt pass pointer");
+                log_internal_event(LOG_LEVEL_ERROR, "Tried to zero memory but didnt pass pointer");
                 return NULL;
         }
         // todo check size of memory so that offset doesnt break stuff
@@ -275,7 +275,7 @@ void *zero_memory(void *ptr, const size_t size, const int offset) {
 
 void *copy_memory(void *dest_ptr, void *src_ptr, const size_t size, const size_t offset_dest, const size_t offset_src) {
         if (dest_ptr == NULL || src_ptr == NULL) {
-                log_event(LOG_LEVEL_ERROR, "Tried to copy memory but at least 1 pointer is not set");
+                log_internal_event(LOG_LEVEL_ERROR, "Tried to copy memory but at least 1 pointer is not set");
                 return NULL;
         }
 
@@ -287,7 +287,7 @@ void *copy_memory(void *dest_ptr, void *src_ptr, const size_t size, const size_t
 
 void *set_memory(void *ptr, int value, size_t size, int offset) {
         if (ptr == NULL) {
-                log_event(LOG_LEVEL_ERROR, "Tried to set Memory but didnt pass pointer");
+                log_internal_event(LOG_LEVEL_ERROR, "Tried to set Memory but didnt pass pointer");
                 return NULL;
         }
 
@@ -337,21 +337,7 @@ void *get_next_allocation_memory_tag_usage(const void *node) {
         return ((memory_tag_usage *)node)->next;
 }
 
-uint32_t find_memory_type(sge_render *render, uint32_t type_filter, VkMemoryPropertyFlags properties) {
-        sge_vulkan_context *vk_context = render->api_context;
-        VkPhysicalDeviceMemoryProperties memory_properties;
-        vkGetPhysicalDeviceMemoryProperties(vk_context->physical_device, &memory_properties);
 
-        for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++) {
-                if ((type_filter & (1 << i)) &&
-                    (memory_properties.memoryTypes[i].propertyFlags & properties) == properties) {
-                        return i;
-                    }
-        }
-
-        log_event(LOG_LEVEL_ERROR, "Failed to find suitable memory type");
-        return UINT32_MAX;
-}
 
 void print_uses() {
         printf("ALLOCATIONS: %d\nFREEING: %d\n", amount_allocations, amount_freeing);

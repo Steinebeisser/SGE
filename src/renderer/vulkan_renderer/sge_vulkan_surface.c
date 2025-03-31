@@ -3,7 +3,10 @@
 //
 
 #include "sge_vulkan_surface.h"
-#include "../../core/logging.h"
+
+
+#include "core/sge_internal_logging.h"
+#include "vulkan_structs.h"
 
 SGE_RESULT sge_vulkan_surface_create(sge_render *render) {
         sge_vulkan_context *vk_context = (sge_vulkan_context*)render->api_context;
@@ -11,6 +14,7 @@ SGE_RESULT sge_vulkan_surface_create(sge_render *render) {
         VkSurfaceKHR surface;
         char *os;
 #ifdef WIN32
+        #include <vulkan/vulkan_win32.h>
         os = "Win32";
         VkWin32SurfaceCreateInfoKHR win32_surface_create_info = {0};
         win32_surface_create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
@@ -18,14 +22,14 @@ SGE_RESULT sge_vulkan_surface_create(sge_render *render) {
         win32_surface_create_info.hinstance = render->window->handle.hinstance;
         VkResult surface_result = vkCreateWin32SurfaceKHR(vk_context->instance, &win32_surface_create_info, NULL, &surface);
 #else
-        log_event(LOG_LEVEL_FATAL, "cant create surface for unsupported operating system");
+        log_internal_event(LOG_LEVEL_FATAL, "cant create surface for unsupported operating system");
         return SGE_UNSUPPORTED_SYSTEM;
 #endif
         if (surface_result != VK_SUCCESS) {
-                log_event(LOG_LEVEL_FATAL, "Failed to create surface for given handle");
+                log_internal_event(LOG_LEVEL_FATAL, "Failed to create surface for given handle");
                 return false;
         }
-        log_event(LOG_LEVEL_INFO, "Created surface for %s", os);
+        log_internal_event(LOG_LEVEL_INFO, "Created surface for %s", os);
 
         vk_context->surface = surface;
 

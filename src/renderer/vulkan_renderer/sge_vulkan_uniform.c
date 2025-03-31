@@ -7,8 +7,10 @@
 #include <math.h>
 #include <stdio.h>
 
-#include "../../core/logging.h"
-#include "../../core/memory_control.h"
+#include "core/sge_internal_logging.h"
+#include "core/memory_control.h"
+#include "vulkan_structs.h"
+
 void sge_m4_set_perspective(m4 mat, float fov_y, float aspect, float near_f, float far_f);
 void sge_m4_set_orthographic(m4 mat, float left, float right, float bottom, float top, float near_f, float far_f);
 
@@ -30,7 +32,7 @@ SGE_RESULT sge_vulkan_update_uniform_buffer(sge_render *render, sge_region *regi
                 sge_vulkan_context *vk_context = render->api_context;
                 sge_camera *camera = region->camera;
                 if (camera == NULL) {
-                        log_event(LOG_LEVEL_FATAL, "no cam for uniform update");
+                        log_internal_event(LOG_LEVEL_FATAL, "no cam for uniform update");
                         return SGE_ERROR;
                 }
 
@@ -62,7 +64,7 @@ SGE_RESULT sge_vulkan_update_uniform_buffer(sge_render *render, sge_region *regi
                 if (region->type == SGE_REGION_2D) {
                         float width = sge_region_get_width(region, render);
                         float height = sge_region_get_height(region, render);
-                        log_event(LOG_LEVEL_INFO, "2D Region Rendering: left=%f right=%f top=%f bottom=%f",
+                        log_internal_event(LOG_LEVEL_INFO, "2D Region Rendering: left=%f right=%f top=%f bottom=%f",
                             region->scissor->offset_x,
                             region->scissor->offset_x + width,
                             region->scissor->offset_y,

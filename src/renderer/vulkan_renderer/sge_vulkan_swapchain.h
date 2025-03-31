@@ -5,7 +5,7 @@
 #ifndef SGE_VULKAN_SWAPCHAIN_H
 #define SGE_VULKAN_SWAPCHAIN_H
 
-#include "../sge_render.h"
+#include "renderer/sge_render.h"
 
 SGE_RESULT sge_vulkan_swapchain_create(sge_render *render);
 

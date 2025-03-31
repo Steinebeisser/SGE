@@ -3,22 +3,23 @@
 //
 
 #include "sge_vulkan_shader.h"
-#include "../../core/memory_control.h"
-#include "../../core/logging.h"
-#include "../../core/os_specific/os_utils.h"
-#include "../../utils/steinfile.h"
+#include "core/memory_control.h"
+#include "core/sge_internal_logging.h"
+#include "core/platform/sge_platform.h"
+#include "utils/sge_file.h"
+#include "vulkan_structs.h"
 
 #include <stdio.h>
 
 char* get_shader_path(const char* shader_name) {
         char *base_dir = get_cwd();
         if (base_dir == NULL) {
-                log_event(LOG_LEVEL_FATAL, "Failed to get base dir");
+                log_internal_event(LOG_LEVEL_FATAL, "Failed to get base dir");
         }
 
         char *shader_path = allocate_memory(512, MEMORY_TAG_INPUT);
         if (!shader_path) {
-                log_event(LOG_LEVEL_FATAL, "failed to allocated memory");
+                log_internal_event(LOG_LEVEL_FATAL, "failed to allocated memory");
         }
 
         sprintf(shader_path, "%s/../src/renderer/shaders/%s", base_dir, shader_name);
@@ -38,7 +39,7 @@ VkShaderModule sge_vulkan_shader_load(sge_render *render, const char *shader_pat
 
         VkShaderModule shaderModule;
         if (vkCreateShaderModule(vk_context->device, &createInfo, vk_context->sge_allocator, &shaderModule) != VK_SUCCESS) {
-                log_event(LOG_LEVEL_FATAL, "Failed to create shader module from file: %s", shader_path);
+                log_internal_event(LOG_LEVEL_FATAL, "Failed to create shader module from file: %s", shader_path);
                 return NULL;
         }
 
@@ -61,7 +62,7 @@ VkShaderModule sge_vulkan_shader_load_old(sge_render *render, const char *shader
 
         VkShaderModule shaderModule;
         if (vkCreateShaderModule(vk_context->device, &createInfo, vk_context->sge_allocator, &shaderModule) != VK_SUCCESS) {
-                log_event(LOG_LEVEL_FATAL, "Failed to create shader module from file: %s", full_filepath);
+                log_internal_event(LOG_LEVEL_FATAL, "Failed to create shader module from file: %s", full_filepath);
                 return NULL;
         }
 

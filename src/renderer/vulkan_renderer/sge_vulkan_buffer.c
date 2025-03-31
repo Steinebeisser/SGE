@@ -4,8 +4,9 @@
 
 #include "sge_vulkan_buffer.h"
 
-#include "../../core/logging.h"
-#include "../../core/memory_control.h"
+#include "sge_vulkan_memory.h"
+#include "core/sge_internal_logging.h"
+#include "vulkan_structs.h"
 
 
 SGE_RESULT sge_vulkan_uniform_buffer_create(sge_render *render) {
@@ -25,7 +26,7 @@ SGE_RESULT sge_vulkan_uniform_buffer_create(sge_render *render) {
 
                 VkResult ubo_buffer_create_result = vkCreateBuffer(vk_context->device, &ubo_buffer_create_info, vk_context->sge_allocator, &vk_context->uniform_buffer[i]);
                 if (ubo_buffer_create_result != VK_SUCCESS) {
-                        log_event(LOG_LEVEL_FATAL, "failed creating uniform buffer");
+                        log_internal_event(LOG_LEVEL_FATAL, "failed creating uniform buffer");
                         return SGE_ERROR;
                 }
 
@@ -41,7 +42,7 @@ SGE_RESULT sge_vulkan_uniform_buffer_create(sge_render *render) {
 
                 VkResult alloc_result = vkAllocateMemory(vk_context->device, &allocate_info, vk_context->sge_allocator, &vk_context->uniform_buffer_memory[i]);
                 if (alloc_result != VK_SUCCESS) {
-                        log_event(LOG_LEVEL_FATAL, "failed allocating memory to uniform buffer");
+                        log_internal_event(LOG_LEVEL_FATAL, "failed allocating memory to uniform buffer");
                         return SGE_ERROR;
                 }
 
@@ -69,7 +70,7 @@ SGE_RESULT sge_vulkan_buffer_create(sge_render *render, void **buffer_ptr) {
         VkBuffer buffer;
         VkResult result = vkCreateBuffer(vk_context->device, &buffer_create_info, vk_context->sge_allocator, &buffer);
         if (result != VK_SUCCESS) {
-                log_event(LOG_LEVEL_FATAL, "failed to create uniform buffer");
+                log_internal_event(LOG_LEVEL_FATAL, "failed to create uniform buffer");
                 return SGE_ERROR;
         }
         *buffer_ptr = (void *)buffer;
@@ -94,7 +95,7 @@ SGE_RESULT sge_vulkan_allocate_buffer(sge_render *render, void **memory_ptr, voi
         VkDeviceMemory memory;
         VkResult result = vkAllocateMemory(vk_context->device, &alloc_info, vk_context->sge_allocator, &memory);
         if (result != VK_SUCCESS) {
-                log_event(LOG_LEVEL_FATAL, "failed to allocate memory for uniform buffer");
+                log_internal_event(LOG_LEVEL_FATAL, "failed to allocate memory for uniform buffer");
                 return SGE_ERROR;
         }
 

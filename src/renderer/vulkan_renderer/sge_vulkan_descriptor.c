@@ -4,8 +4,9 @@
 
 #include "sge_vulkan_descriptor.h"
 
-#include "../../core/logging.h"
-#include "../../core/memory_control.h"
+#include "sge_vulkan_buffer.h"
+#include "core/sge_internal_logging.h"
+#include "vulkan_structs.h"
 
 
 SGE_RESULT sge_vulkan_descriptor_pool_create_old(sge_render *render) {
@@ -27,7 +28,7 @@ SGE_RESULT sge_vulkan_descriptor_pool_create_old(sge_render *render) {
 
         VkResult descriptor_pool_result = vkCreateDescriptorPool(vk_context->device, &descriptor_pool_create_info, vk_context->sge_allocator, &vk_context->descriptor_pool);
         if (descriptor_pool_result != VK_SUCCESS) {
-                log_event(LOG_LEVEL_FATAL, "Failed to create descriptor pool");
+                log_internal_event(LOG_LEVEL_FATAL, "Failed to create descriptor pool");
                 return SGE_ERROR;
         }
 
@@ -58,7 +59,7 @@ SGE_RESULT sge_vulkan_uniform_descriptor_create(sge_render *render) {
 
                 VkResult descriptor_layout_result = vkCreateDescriptorSetLayout(vk_context->device, &descriptor_set_layout_create_info, vk_context->sge_allocator, &vk_context->descriptor_set_layout);
                 if (descriptor_layout_result != VK_SUCCESS) {
-                        log_event(LOG_LEVEL_FATAL, "failed creating descriptor layout");
+                        log_internal_event(LOG_LEVEL_FATAL, "failed creating descriptor layout");
                         return SGE_ERROR;
                 }
 
@@ -72,7 +73,7 @@ SGE_RESULT sge_vulkan_uniform_descriptor_create(sge_render *render) {
 
                 VkResult allocation_result = vkAllocateDescriptorSets(vk_context->device, &descriptor_set_allocate_info, &vk_context->descriptor_set[i]);
                 if (allocation_result != VK_SUCCESS) {
-                        log_event(LOG_LEVEL_FATAL, "failed to allocate descriptor set");
+                        log_internal_event(LOG_LEVEL_FATAL, "failed to allocate descriptor set");
                         return SGE_ERROR;
                 }
 
@@ -120,7 +121,7 @@ SGE_RESULT sge_vulkan_descriptor_pool_create(sge_render *render, void *pool_ptr)
 
         VkResult result = vkCreateDescriptorPool(vk_context->device, &descriptor_pool_create_info, vk_context->sge_allocator, pool_ptr);
         if (result != VK_SUCCESS) {
-                log_event(LOG_LEVEL_FATAL, "Failed to create descriptor pool");
+                log_internal_event(LOG_LEVEL_FATAL, "Failed to create descriptor pool");
                 return SGE_ERROR;
         }
 
@@ -149,7 +150,7 @@ SGE_RESULT sge_vulkan_descriptor_set(sge_render *render, void *descriptor_ptr, v
 
         VkResult layout_result = vkCreateDescriptorSetLayout(vk_context->device, &descriptor_set_layout_create_info, vk_context->sge_allocator, layout_ptr);
         if (layout_result != VK_SUCCESS) {
-                log_event(LOG_LEVEL_FATAL, "Failed creating descriptor layout");
+                log_internal_event(LOG_LEVEL_FATAL, "Failed creating descriptor layout");
                 return SGE_ERROR;
         }
 
@@ -163,7 +164,7 @@ SGE_RESULT sge_vulkan_descriptor_set(sge_render *render, void *descriptor_ptr, v
 
         VkResult allocation_result = vkAllocateDescriptorSets(vk_context->device, &descriptor_set_allocate_info, descriptor_ptr);
         if (allocation_result != VK_SUCCESS) {
-                log_event(LOG_LEVEL_FATAL, "Failed to allocate descriptor set");
+                log_internal_event(LOG_LEVEL_FATAL, "Failed to allocate descriptor set");
                 return SGE_ERROR;
         }
 

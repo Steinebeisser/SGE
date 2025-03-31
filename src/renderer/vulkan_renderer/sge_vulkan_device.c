@@ -3,7 +3,8 @@
 //
 
 #include "sge_vulkan_device.h"
-#include "../../core/logging.h"
+#include "vulkan_structs.h"
+#include "core/sge_internal_logging.h"
 
 VkFormat find_depth_format(VkPhysicalDevice physical_device);
 
@@ -14,7 +15,7 @@ SGE_RESULT sge_vulkan_physical_device_select(sge_render *render) {
         vkEnumeratePhysicalDevices(vk_context->instance, &device_count, NULL);
 
         if (device_count == 0) {
-                log_event(LOG_LEVEL_FATAL, "No Vulkan compatible GPUs found");
+                log_internal_event(LOG_LEVEL_FATAL, "No Vulkan compatible GPUs found");
         }
 
         VkPhysicalDevice devices[device_count];
@@ -34,7 +35,7 @@ SGE_RESULT sge_vulkan_physical_device_select(sge_render *render) {
 
                 VkPhysicalDeviceFeatures features;
                 vkGetPhysicalDeviceFeatures(devices[i], &features);
-                log_event(LOG_LEVEL_INFO, "DEVICE: %s SUPPORTS fillModeNonSolid: %d", properties.deviceName, features.fillModeNonSolid = VK_TRUE ? 1 : 0);
+                log_internal_event(LOG_LEVEL_INFO, "DEVICE: %s SUPPORTS fillModeNonSolid: %d", properties.deviceName, features.fillModeNonSolid = VK_TRUE ? 1 : 0);
 
                 VkPhysicalDeviceMemoryProperties memory_properties;
                 vkGetPhysicalDeviceMemoryProperties(devices[i], &memory_properties);
@@ -59,7 +60,7 @@ SGE_RESULT sge_vulkan_physical_device_select(sge_render *render) {
         }
 
         if (using_gpu.device_index == -1) {
-                log_event(LOG_LEVEL_FATAL, "Failed to get gpu for Vulkan");
+                log_internal_event(LOG_LEVEL_FATAL, "Failed to get gpu for Vulkan");
                 return SGE_ERROR;
         }
 
@@ -89,7 +90,7 @@ SGE_RESULT sge_vulkan_logical_device_create(sge_render *render) {
         sge_vulkan_context *vk_context = (sge_vulkan_context*)render->api_context;
 
         if (!vk_context->physical_device) {
-                log_event(LOG_LEVEL_FATAL, "Tried creating logical device without having physical device");
+                log_internal_event(LOG_LEVEL_FATAL, "Tried creating logical device without having physical device");
                 return SGE_ERROR;
         }
 
@@ -97,7 +98,7 @@ SGE_RESULT sge_vulkan_logical_device_create(sge_render *render) {
         vkGetPhysicalDeviceQueueFamilyProperties(vk_context->physical_device, &queue_family_count, NULL);
 
         if (queue_family_count == 0) {
-                log_event(LOG_LEVEL_FATAL, "No queue Families found");
+                log_internal_event(LOG_LEVEL_FATAL, "No queue Families found");
         }
 
         VkQueueFamilyProperties queue_family_properties[queue_family_count];
@@ -105,7 +106,7 @@ SGE_RESULT sge_vulkan_logical_device_create(sge_render *render) {
 
         VkFormat depth_format = find_depth_format(vk_context->physical_device);
         if (depth_format == VK_FORMAT_UNDEFINED) {
-                log_event(LOG_LEVEL_FATAL, "failed to receive depthj format for physical device");
+                log_internal_event(LOG_LEVEL_FATAL, "failed to receive depthj format for physical device");
                 return SGE_ERROR;
         }
         vk_context->sc.depth_format = depth_format;
@@ -126,13 +127,13 @@ SGE_RESULT sge_vulkan_logical_device_create(sge_render *render) {
         }
 
         if (graphics_queue_family_index == UINT32_MAX) {
-                log_event(LOG_LEVEL_FATAL, "Couldnt find working queue family");
+                log_internal_event(LOG_LEVEL_FATAL, "Couldnt find working queue family");
                 return false;
         }
 
         vk_context->graphics_queue_family_index;
 
-        log_event(LOG_LEVEL_INFO, "Found %d queue families", queue_family_count);
+        log_internal_event(LOG_LEVEL_INFO, "Found %d queue families", queue_family_count);
 
         float queue_priorities = 1.0f;
         VkDeviceQueueCreateInfo queue_create_info = {0};
@@ -170,11 +171,11 @@ SGE_RESULT sge_vulkan_logical_device_create(sge_render *render) {
         VkResult result2 =  vkCreateDevice(vk_context->physical_device, &device_create_info, vk_context->sge_allocator, &vk_device);
 
         if (result2 != VK_SUCCESS) {
-                log_event(LOG_LEVEL_FATAL, "Failed to create Device");
+                log_internal_event(LOG_LEVEL_FATAL, "Failed to create Device");
                 return SGE_ERROR;
         }
 
-        log_event(LOG_LEVEL_INFO, "Created logical device for GPU: %s", vk_context->physical_device_properties.deviceName);
+        log_internal_event(LOG_LEVEL_INFO, "Created logical device for GPU: %s", vk_context->physical_device_properties.deviceName);
 
         vk_context->device = vk_device;
 
@@ -215,6 +216,6 @@ VkFormat find_depth_format(VkPhysicalDevice physical_device) {
                         return query_formats[i];
                 }
         }
-        log_event(LOG_LEVEL_ERROR, "Failed to find supported depth format");
+        log_internal_event(LOG_LEVEL_ERROR, "Failed to find supported depth format");
         return VK_FORMAT_UNDEFINED;
 }

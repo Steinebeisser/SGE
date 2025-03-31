@@ -3,8 +3,9 @@
 //
 
 #include "sge_vulkan_allocator.h"
-#include "../../core/memory_control.h"
-#include "../../core/logging.h"
+#include "core/memory_control.h"
+#include "core/sge_internal_logging.h"
+#include "vulkan_structs.h"
 
 
 void* VKAPI_CALL sge_allocator(void *pUserData, size_t size, size_t alignment, VkSystemAllocationScope allocation_scope) {
@@ -28,7 +29,7 @@ SGE_RESULT sge_vulkan_allocator_create(sge_render *render, sge_render_settings *
                 return SGE_SUCCESS;
         }
         VkAllocationCallbacks *callbacks = allocate_memory(sizeof(VkAllocationCallbacks), MEMORY_TAG_VULKAN);
-        if (callbacks == NULL) { log_event(LOG_LEVEL_FATAL, "Failed to allocate memory for sge allocator"); return false; }
+        if (callbacks == NULL) { log_internal_event(LOG_LEVEL_FATAL, "Failed to allocate memory for sge allocator"); return false; }
 
         callbacks->pUserData = NULL;
         callbacks->pfnAllocation = sge_allocator;

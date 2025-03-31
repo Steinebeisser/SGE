@@ -2,13 +2,13 @@
 // Created by Geisthardt on 14.03.2025.
 //
 
-#include "sge_region.h"
+#include "renderer/sge_region.h"
 
 #include <stdio.h>
 
-#include "../core/input.h"
-#include "../core/logging.h"
-#include "../core/memory_control.h"
+#include "core/input.h"
+#include "core/sge_internal_logging.h"
+#include "core/memory_control.h"
 
 extern bool is_hidden;
 extern mouse_pos last_visible_pos;
@@ -17,25 +17,25 @@ extern mouse_pos last_visible_pos;
 sge_region *sge_region_create(sge_render *render, sge_region_settings *settings) {
         sge_region *region = allocate_memory(sizeof(sge_region), MEMORY_TAG_REGION);
         if (region == NULL) {
-                log_event(LOG_LEVEL_FATAL, "failed to allocate for region");
+                log_internal_event(LOG_LEVEL_FATAL, "failed to allocate for region");
                 return NULL;
         }
 
         region->viewport = allocate_memory(sizeof(sge_viewport), MEMORY_TAG_REGION);
         if (region->viewport == NULL) {
-                log_event(LOG_LEVEL_FATAL, "failed to allocate for viewport");
+                log_internal_event(LOG_LEVEL_FATAL, "failed to allocate for viewport");
                 return NULL;
         }
 
         region->scissor = allocate_memory(sizeof(sge_scissor), MEMORY_TAG_REGION);
         if (region->scissor == NULL) {
-                log_event(LOG_LEVEL_FATAL, "failed to allocate for scissor");
+                log_internal_event(LOG_LEVEL_FATAL, "failed to allocate for scissor");
                 return NULL;
         }
 
         region->camera = allocate_memory(sizeof(sge_camera), MEMORY_TAG_REGION);
         if (region->camera == NULL) {
-                log_event(LOG_LEVEL_FATAL, "failed to allocate for camera");
+                log_internal_event(LOG_LEVEL_FATAL, "failed to allocate for camera");
                 return NULL;
         }
 
@@ -61,40 +61,40 @@ sge_region *sge_region_create(sge_render *render, sge_region_settings *settings)
 
         region->type = settings->type;
 
-        log_event(LOG_LEVEL_INFO, "creating vk descriptor pool");
+        log_internal_event(LOG_LEVEL_INFO, "creating vk descriptor pool");
         SGE_RESULT descriptor_pool_result = sge_create_descriptor_pool(render, &region->descriptor_pool);
         if (descriptor_pool_result != SGE_SUCCESS) {
-                log_event(LOG_LEVEL_FATAL, "failed to create descriptor pool");
+                log_internal_event(LOG_LEVEL_FATAL, "failed to create descriptor pool");
                 return NULL;
         }
 
         //todo based on frames in flight
         for (int i = 0; i < 3; ++i) {
-                log_event(LOG_LEVEL_INFO, "creating region buffer");
+                log_internal_event(LOG_LEVEL_INFO, "creating region buffer");
                 SGE_RESULT buffer_result = sge_create_buffer(render, &region->uniform_buffers[i].buffer);
                 if (buffer_result != SGE_SUCCESS) {
-                        log_event(LOG_LEVEL_FATAL, "failed to create buffer for region");
+                        log_internal_event(LOG_LEVEL_FATAL, "failed to create buffer for region");
                         return NULL;
                 }
 
-                log_event(LOG_LEVEL_INFO, "allocating region buffer");
+                log_internal_event(LOG_LEVEL_INFO, "allocating region buffer");
                 SGE_RESULT allocation_result = sge_allocate_buffer(render, &region->uniform_buffers[i].memory, region->uniform_buffers[i].buffer);
                 if (allocation_result != SGE_SUCCESS) {
-                        log_event(LOG_LEVEL_FATAL, "failed to allocate memory for region buffer");
+                        log_internal_event(LOG_LEVEL_FATAL, "failed to allocate memory for region buffer");
                         return NULL;
                 }
 
-                log_event(LOG_LEVEL_INFO, "creating descriptor set");
+                log_internal_event(LOG_LEVEL_INFO, "creating descriptor set");
                 SGE_RESULT descriptor_set_result = sge_allocate_descriptor_set(render, &region->uniform_buffers[i].descriptor, &region->uniform_buffers[i].descriptor_layout, region->descriptor_pool);
                 if (descriptor_set_result != SGE_SUCCESS) {
-                        log_event(LOG_LEVEL_FATAL, "failed to set descriptor for region");
+                        log_internal_event(LOG_LEVEL_FATAL, "failed to set descriptor for region");
                         return NULL;
                 }
 
-                log_event(LOG_LEVEL_INFO, "writing to descriptor set");
+                log_internal_event(LOG_LEVEL_INFO, "writing to descriptor set");
                 SGE_RESULT descriptor_write_result = sge_update_descriptor_set(render, &region->uniform_buffers[i]);
                 if (descriptor_write_result != SGE_SUCCESS) {
-                        log_event(LOG_LEVEL_FATAL, "failed to write descriptor set");
+                        log_internal_event(LOG_LEVEL_FATAL, "failed to write descriptor set");
                         return NULL;
                 }
         }
@@ -105,7 +105,7 @@ sge_region *sge_region_create(sge_render *render, sge_region_settings *settings)
         render->regions[render->region_count -1] = region;
 
 
-        log_event(LOG_LEVEL_INFO, "created region");
+        log_internal_event(LOG_LEVEL_INFO, "created region");
 
         return region;
 }
@@ -116,7 +116,7 @@ SGE_RESULT sge_region_add_renderable(sge_region *region, sge_renderable *rendera
         region->renderables = reallocate_memory(region->renderables, sizeof(sge_renderable *) * region->renderable_count, MEMORY_TAG_RENDERER);
         region->renderables[region->renderable_count - 1] = renderable;
 
-        log_event(LOG_LEVEL_INFO, "added renderable to region");
+        log_internal_event(LOG_LEVEL_INFO, "added renderable to region");
 
         return SGE_SUCCESS;
 }
@@ -127,7 +127,7 @@ SGE_RESULT sge_region_resize_auto_resizing_regions(sge_render *render, float old
         }
         float resize_factor_width = new_width / old_width;
         float resize_factor_height = new_height / old_height;
-        printf("%f, %f", resize_factor_width, resize_factor_height);
+        //printf("%f, %f", resize_factor_width, resize_factor_height);
 
         for (int i = 0; i < render->region_count; ++i) {
                 sge_region *region = render->regions[i];
@@ -234,7 +234,7 @@ sge_region **sge_region_get_active_list(sge_render *render, int *regions_count) 
         mouse_pos current_mouse_pos;
         sge_region **regions = allocate_memory(sizeof(sge_region*) * render->region_count, MEMORY_TAG_REGION);
         if (regions == NULL) {
-                log_event(LOG_LEVEL_FATAL, "Failed to allocate for region list");
+                log_internal_event(LOG_LEVEL_FATAL, "Failed to allocate for region list");
                 return NULL;
         }
         if (is_hidden) {

@@ -7,7 +7,8 @@
 #include <stdio.h>
 
 #include "sge_vulkan_resize.h"
-#include "../../core/logging.h"
+#include "core/sge_internal_logging.h"
+#include "vulkan_structs.h"
 
 extern bool is_resize;
 
@@ -27,7 +28,7 @@ SGE_RESULT sge_vulkan_draw_frame(sge_render *render) {
                                                         vk_context->so.image_available_semaphores[vk_context->so.current_frame],
                                                         VK_NULL_HANDLE, &image_index);
         if (acquire_result != VK_SUCCESS && acquire_result != VK_SUBOPTIMAL_KHR) {
-            log_event(LOG_LEVEL_ERROR, "Failed to acquire next image");
+            log_internal_event(LOG_LEVEL_ERROR, "Failed to acquire next image");
             return SGE_ERROR;
         }
 
@@ -35,19 +36,19 @@ SGE_RESULT sge_vulkan_draw_frame(sge_render *render) {
 
 
         VkCommandBuffer command_buffer = vk_context->command_buffer[vk_context->command_buffer_index];
-        //log_event(LOG_LEVEL_TRACE, "beginning command buffer recording");
+        //log_internal_event(LOG_LEVEL_TRACE, "beginning command buffer recording");
         vkResetCommandBuffer(command_buffer, 0);
-        //log_event(LOG_LEVEL_TRACE, "reset cmd buffer");
+        //log_internal_event(LOG_LEVEL_TRACE, "reset cmd buffer");
         VkCommandBufferBeginInfo cmd_buf_begin_info = {0};
         cmd_buf_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
         const VkResult rec_begin_result = vkBeginCommandBuffer(command_buffer, &cmd_buf_begin_info);
 
         if (rec_begin_result != VK_SUCCESS) {
-                log_event(LOG_LEVEL_FATAL, "Failed to begin cmd buffer recording: %d", rec_begin_result);
+                log_internal_event(LOG_LEVEL_FATAL, "Failed to begin cmd buffer recording: %d", rec_begin_result);
         }
 
-        //log_event(LOG_LEVEL_INFO, "Can now record into cmd buffer");
+        //log_internal_event(LOG_LEVEL_INFO, "Can now record into cmd buffer");
 
 
         vk_context->command_buffer_index = (vk_context->command_buffer_index + 1) % 3;
@@ -168,16 +169,16 @@ SGE_RESULT sge_vulkan_draw_frame(sge_render *render) {
                 if (region->uniform_buffers && vk_context->so.current_frame < 3) {
                         desc_set = (VkDescriptorSet)region->uniform_buffers[vk_context->so.current_frame].descriptor;
                         if (!desc_set) {
-                                log_event(LOG_LEVEL_ERROR, "Invalid descriptor set for region %d", i);
+                                log_internal_event(LOG_LEVEL_ERROR, "Invalid descriptor set for region %d", i);
                                 continue;
                         }
                 } else {
-                        log_event(LOG_LEVEL_ERROR, "Missing uniform buffers for region %d", i);
+                        log_internal_event(LOG_LEVEL_ERROR, "Missing uniform buffers for region %d", i);
                         continue;
                 }
 
                 if (!region->viewport || !region->scissor) {
-                        log_event(LOG_LEVEL_ERROR, "Region missing viewport or scissor");
+                        log_internal_event(LOG_LEVEL_ERROR, "Region missing viewport or scissor");
                         continue;
                 }
 
@@ -206,17 +207,17 @@ SGE_RESULT sge_vulkan_draw_frame(sge_render *render) {
                         sge_renderable *renderable = region->renderables[r];
 
                         if (!renderable || !renderable->mesh) {
-                                log_event(LOG_LEVEL_ERROR, "NULL renderable or mesh at index %d", r);
+                                log_internal_event(LOG_LEVEL_ERROR, "NULL renderable or mesh at index %d", r);
                                 continue;
                         }
 
-                        log_event(LOG_LEVEL_INFO, "Drawing mesh: vertices=%d, stride=%d, buffer=%p",
+                        log_internal_event(LOG_LEVEL_INFO, "Drawing mesh: vertices=%d, stride=%d, buffer=%p",
                                 renderable->mesh->vertex_count,
                                 renderable->mesh->vertex_size,
                                 renderable->mesh->vertex_buffer.api_handle);
 
                         if (!renderable->pipeline) {
-                                log_event(LOG_LEVEL_WARNING, "no pipeline for renderable");
+                                log_internal_event(LOG_LEVEL_WARNING, "no pipeline for renderable");
                                 continue;
                         }
 
@@ -230,7 +231,7 @@ SGE_RESULT sge_vulkan_draw_frame(sge_render *render) {
                                 }
                         } else {
                                 if (current_pipeline != vk_context->pipeline) {
-                                        log_event(LOG_LEVEL_WARNING, "fallback global pipeline");
+                                        log_internal_event(LOG_LEVEL_WARNING, "fallback global pipeline");
                                         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_context->pipeline);
                                         current_pipeline = vk_context->pipeline;
                                         vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -265,7 +266,7 @@ SGE_RESULT sge_vulkan_draw_frame(sge_render *render) {
         //vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
         //for (int i = 0; i < render->sge_renderables_count; ++i) {
-        //        log_event(LOG_LEVEL_INFO, "rendering renderable");
+        //        log_internal_event(LOG_LEVEL_INFO, "rendering renderable");
         //        sge_renderable *renderable = &render->sge_renderables;
 //
         //        VkBuffer vertex_buffers[] = { renderable->mesh->vertex_buffer };
@@ -288,10 +289,10 @@ SGE_RESULT sge_vulkan_draw_frame(sge_render *render) {
 
         const VkResult rec_end_result = vkEndCommandBuffer(command_buffer);
         if (rec_end_result != VK_SUCCESS) {
-                log_event(LOG_LEVEL_FATAL, "Failed to end cmd buffer recording: %d", rec_end_result);
+                log_internal_event(LOG_LEVEL_FATAL, "Failed to end cmd buffer recording: %d", rec_end_result);
         }
 
-        //log_event(LOG_LEVEL_INFO, "Finished cmd buffer recording");
+        //log_internal_event(LOG_LEVEL_INFO, "Finished cmd buffer recording");
 
         VkSubmitInfo submit_info = {
                 .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
@@ -307,7 +308,7 @@ SGE_RESULT sge_vulkan_draw_frame(sge_render *render) {
         VkResult submit_result = vkQueueSubmit(vk_context->graphics_queue, 1, &submit_info,
                                                vk_context->so.in_flight_fences[vk_context->so.current_frame]);
         if (submit_result != VK_SUCCESS) {
-                log_event(LOG_LEVEL_ERROR, "Failed to submit queue");
+                log_internal_event(LOG_LEVEL_ERROR, "Failed to submit queue");
                 return SGE_ERROR;
         }
 
@@ -322,7 +323,7 @@ SGE_RESULT sge_vulkan_draw_frame(sge_render *render) {
 
         VkResult present_result = vkQueuePresentKHR(vk_context->present_queue, &present_info);
         if (present_result != VK_SUCCESS) {
-                log_event(LOG_LEVEL_ERROR, "Failed to present queue");
+                log_internal_event(LOG_LEVEL_ERROR, "Failed to present queue");
                 return SGE_ERROR;
         }
 
@@ -331,7 +332,7 @@ SGE_RESULT sge_vulkan_draw_frame(sge_render *render) {
         return SGE_SUCCESS;
 
     //if (!sge_begin_frame(render)) {
-    //    log_event(LOG_LEVEL_FATAL, "Failed to begin frame");
+    //    log_internal_event(LOG_LEVEL_FATAL, "Failed to begin frame");
     //    return SGE_ERROR;
     //}
 
