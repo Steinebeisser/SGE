@@ -17,10 +17,17 @@ void seg_fault_handler(int sig) {
 int main(void) {
         atexit(terminate_program);
         //signal(SIGSEGV, seg_fault_handler);
-        if (start_logger() != 0) {
+        sge_log_settings log_settings = {0};
+        if (start_logger(log_settings) != 0) {
                 return 1;
         }
         log_event(LOG_LEVEL_INFO, "TEST EVENT: %d", 20);
+
+        //sge_screens_data *screen_data = get_screens_data();
+        //for (int i = 0; i < screen_data->num_screens; ++i) {
+        //        sge_screen_data screen = screen_data->screens[i];
+        //        printf("%sMonitor %s, with resolution: %d:%d\n", screen.is_primary ? "Primary   " : "Secondary ", screen.name, screen.width, screen.height);
+        //}
 
         sge_window *window= sge_window_create(700, 500, "Test Window");
         sge_render *render = sge_render_create(RENDER_API_VULKAN, window);
@@ -387,7 +394,6 @@ int main(void) {
                 //printf("DREW 1 FRAME\n");
                 //sge_update_uniform_buffer(render, main_region);
                 //sge_update_uniform_buffer(render, secondary_region);
-                sge_update_uniform_buffer(render, NULL);
                 sge_draw_frame(render);
                 update_frame(target_fps, start_time, window);
                 //timeEndPeriod(1);

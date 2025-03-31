@@ -34,14 +34,16 @@ bool started_logging = false;
 bool using_logging = false;
 int log_buffer_index = 0;
 
-SGE_BOOL always_write = SGE_TRUE;
+SGE_BOOL always_write = SGE_FALSE;
+SGE_BOOL include_internal_logs = SGE_TRUE;
+SGE_BOOL is_release = SGE_FALSE;
 
 char *log_levels[] = {"FATAL", "ERROR", "WARNING", "INFO", "DEBUG", "TRACE", NULL};
 int level_padding;
 
 int write_buffer_to_log_file();
 
-int start_logger() {
+SGE_RESULT start_logger(sge_log_settings settings) {
         using_logging = true;
         level_padding = get_longest_element_in_array(log_levels);
         log_internal_event(LOG_LEVEL_INFO, "Initializing Logger");
@@ -115,12 +117,26 @@ int start_logger() {
                 return 1;
         }
 
-        return 0;
+        if (settings.write_instantly) {
+                always_write = SGE_TRUE;
+        } else {
+                always_write = SGE_FALSE;
+        }
+        if (settings.include_internal_logs) {
+                include_internal_logs = SGE_TRUE;
+        } else {
+                include_internal_logs = SGE_FALSE;
+        }
+        if (settings.is_release) {
+                is_release = SGE_TRUE;
+        } else {
+                is_release = SGE_FALSE;
+        }
+
+        return SGE_SUCCESS;
 }
 
-void allocation_error() {
-        log_internal_event(LOG_LEVEL_FATAL, "Failed to allocate Memory");
-}
+
 
 
 
@@ -131,6 +147,12 @@ void log_event(const log_level level, const char *message, ...) {
         }
         if (!is_debug_2 && level != LOG_LEVEL_FATAL) {
                 return;
+        }
+
+        if (is_release) {
+                if (level != LOG_LEVEL_ERROR || level != LOG_LEVEL_FATAL || level != LOG_LEVEL_WARNING) {
+                        return;
+                }
         }
 
         char formatted_message[1024];
@@ -261,14 +283,14 @@ int write_buffer_to_log_file() {
         return 0;
 }
 
-int stop_logger() {
+SGE_RESULT stop_logger() {
     // print rest of buffer into file
         if (write_buffer_to_log_file() != 0) {
-                return 1;
+                return SGE_ERROR;
         }
         log_file_filepath[0] = '\0';
         log_buffer = NULL;
         started_logging = false;
 
-        return 0;
+        return SGE_SUCCESS;
 }

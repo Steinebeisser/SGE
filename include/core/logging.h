@@ -4,6 +4,7 @@
 
 #ifndef LOGGING_H
 #define LOGGING_H
+#include <sge_types.h>
 
 typedef enum log_level {
     LOG_LEVEL_FATAL = 0,
@@ -14,9 +15,13 @@ typedef enum log_level {
     LOG_LEVEL_TRACE = 5
 } log_level;
 
+typedef struct sge_log_settings {
+        SGE_BOOL        write_instantly;
+        SGE_BOOL        include_internal_logs;
+        SGE_BOOL        is_release;
+} sge_log_settings;
 
-int start_logger();
-void allocation_error();
+SGE_RESULT start_logger(sge_log_settings settings);
+SGE_RESULT stop_logger();
 void log_event(log_level level, const char *message, ...);
-int stop_logger();
-#endif //LOGGING_H
+#endif //LOGGING_H1

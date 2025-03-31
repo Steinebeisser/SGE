@@ -8,5 +8,6 @@
 #include "core/logging.h"
 
 void log_internal_event(log_level level, const char *message, ...);
+void allocation_error();
 
 #endif //SGE_INTERNAL_LOGGING_H
