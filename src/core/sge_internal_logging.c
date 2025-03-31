@@ -10,9 +10,13 @@
 #include <string.h>
 
 extern bool using_logging;
+extern SGE_BOOL include_internal_logs;
 
 void log_internal_event(const log_level level, const char *message, ...) {
         if (!using_logging) {
+                return;
+        }
+        if (!include_internal_logs) {
                 return;
         }
 
@@ -27,4 +31,8 @@ void log_internal_event(const log_level level, const char *message, ...) {
         va_end(args);
 
         log_event(level, "%s", formatted_message);
+}
+
+void allocation_error() {
+        log_internal_event(LOG_LEVEL_FATAL, "Failed to allocate Memory");
 }
