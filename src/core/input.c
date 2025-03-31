@@ -2,13 +2,13 @@
 // Created by Geisthardt on 03.03.2025.
 //
 
-#include "input.h"
+#include "core/input.h"
 
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "logging.h"
-#include "memory_control.h"
+#include "core/sge_internal_logging.h"
+#include "core/memory_control.h"
 
 int *key_states = NULL;
 int *last_key_states = NULL;
@@ -23,12 +23,12 @@ void enable_input_tracking() {
         key_states = allocate_memory(256 * sizeof(int), MEMORY_TAG_INPUT);
         last_key_states = allocate_memory(256 * sizeof(int), MEMORY_TAG_INPUT);
         if (key_states == NULL || last_key_states == NULL) {
-                log_event(LOG_LEVEL_FATAL, "Failed to init Key states");
+                log_internal_event(LOG_LEVEL_FATAL, "Failed to init Key states");
         }
         mouse_states = allocate_memory(16 * sizeof(int), MEMORY_TAG_INPUT);
         last_mouse_states = allocate_memory(16 * sizeof(int), MEMORY_TAG_INPUT);
         if (mouse_states == NULL || last_mouse_states == NULL) {
-                log_event(LOG_LEVEL_FATAL, "Failed to init Mouse states");
+                log_internal_event(LOG_LEVEL_FATAL, "Failed to init Mouse states");
         }
 }
 

@@ -3,14 +3,17 @@
 //
 
 #include "sge_vulkan_swapchain.h"
-#include "../../core/logging.h"
-#include "../../core/memory_control.h"
+
+#include "sge_vulkan_memory.h"
+#include "core/sge_internal_logging.h"
+#include "core/memory_control.h"
+#include "vulkan_structs.h"
 
 
 SGE_RESULT sge_vulkan_swapchain_create(sge_render *render) {
         sge_vulkan_context *vk_context = (sge_vulkan_context*)render->api_context;
 
-        log_event(LOG_LEVEL_TRACE, "Creating swapchain");
+        log_internal_event(LOG_LEVEL_TRACE, "Creating swapchain");
 
         uint32_t old_width = vk_context->sc.surface_capabilities.currentExtent.width;
         uint32_t old_height = vk_context->sc.surface_capabilities.currentExtent.height;
@@ -40,7 +43,7 @@ SGE_RESULT sge_vulkan_swapchain_create(sge_render *render) {
         };
 
         if (vkCreateSwapchainKHR(vk_context->device, &create_info, vk_context->sge_allocator, &vk_context->swapchain) != VK_SUCCESS) {
-                log_event(LOG_LEVEL_FATAL, "failed to create swapchain");
+                log_internal_event(LOG_LEVEL_FATAL, "failed to create swapchain");
                 return SGE_ERROR;
         }
 
@@ -60,7 +63,7 @@ SGE_RESULT sge_vulkan_swapchain_create(sge_render *render) {
                         .subresourceRange.layerCount = 1,
                 };
                 if (vkCreateImageView(vk_context->device, &view_info, vk_context->sge_allocator, &vk_context->sc.color_views[i]) != VK_SUCCESS) {
-                        log_event(LOG_LEVEL_FATAL, "failed creating image view");
+                        log_internal_event(LOG_LEVEL_FATAL, "failed creating image view");
                         return SGE_ERROR;
                 }
         }
@@ -93,7 +96,7 @@ SGE_RESULT sge_vulkan_swapchain_create(sge_render *render) {
                 };
 
                 if (vkCreateImage(vk_context->device, &depth_image_create_info, vk_context->sge_allocator, &vk_context->sc.depth_images[i]) != VK_SUCCESS) {
-                        log_event(LOG_LEVEL_ERROR, "Failed to create depth image %d", i);
+                        log_internal_event(LOG_LEVEL_ERROR, "Failed to create depth image %d", i);
                         return SGE_ERROR;
                 }
 
@@ -107,7 +110,7 @@ SGE_RESULT sge_vulkan_swapchain_create(sge_render *render) {
                     };
 
                 if (vkAllocateMemory(vk_context->device, &alloc_info, vk_context->sge_allocator, &vk_context->sc.depth_memories[i]) != VK_SUCCESS) {
-                        log_event(LOG_LEVEL_FATAL, "Failed to allocate depth image memory %d", i);
+                        log_internal_event(LOG_LEVEL_FATAL, "Failed to allocate depth image memory %d", i);
                         return SGE_ERROR;
                 }
 
@@ -128,13 +131,13 @@ SGE_RESULT sge_vulkan_swapchain_create(sge_render *render) {
                 };
 
                 if (vkCreateImageView(vk_context->device, &view_info, vk_context->sge_allocator, &vk_context->sc.depth_views[i]) != VK_SUCCESS) {
-                        log_event(LOG_LEVEL_FATAL, "Failed to create depth image view %d", i);
+                        log_internal_event(LOG_LEVEL_FATAL, "Failed to create depth image view %d", i);
                         return SGE_ERROR;
                 }
 
-                log_event(LOG_LEVEL_INFO, "Created depth buffer %d", i);
+                log_internal_event(LOG_LEVEL_INFO, "Created depth buffer %d", i);
         }
-        log_event(LOG_LEVEL_TRACE, "Created swapchain");
+        log_internal_event(LOG_LEVEL_TRACE, "Created swapchain");
         return SGE_SUCCESS;
 }
 

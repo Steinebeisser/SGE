@@ -2,12 +2,12 @@
 // Created by Geisthardt on 20.03.2025.
 //
 
-#include "sge_shader_utils.h"
+#include "renderer/shader/sge_shader_utils.h"
 
-#include "../../core/logging.h"
-#include "../../core/memory_control.h"
-#include "../../utils/steinfile.h"
-#include "../../utils/steinstring.h"
+#include "core/sge_internal_logging.h"
+#include "core/memory_control.h"
+#include "utils/sge_file.h"
+#include "utils/sge_string.h"
 
 #define SHADER_PATH_NAME "Shaders"
 
@@ -46,18 +46,19 @@ SGE_SHADER_LOCATIONS sge_get_location_from_attribute_type(SGE_ATTRIBUTE_TYPE typ
 
 
 char *sge_get_vertex_shader_path_for_format(sge_render *render, sge_vertex_format *format, SGE_BOOL is_3d) {
+        log_internal_event(LOG_LEVEL_INFO, "getting vertex shader path");
         char filename[255] = {0};
         char *cwd = get_current_working_directory();
         char *path = allocate_memory(1024, MEMORY_TAG_SHADER);
         if (path == NULL) {
-                log_event(LOG_LEVEL_FATAL, "failed to allocate for vert shader path");
+                log_internal_event(LOG_LEVEL_FATAL, "failed to allocate for vert shader path");
                 return NULL;
         }
 
         //add mroe
 
         if (format->attribute_count == 0) {
-                log_event(LOG_LEVEL_FATAL, "no attributes for shader");
+                log_internal_event(LOG_LEVEL_FATAL, "no attributes for shader");
                 return path;
         }
 
@@ -93,7 +94,7 @@ char *sge_get_vertex_shader_path_for_format(sge_render *render, sge_vertex_forma
         if (render->api == RENDER_API_VULKAN) {
                 strcat(file_ending, ".spv");
         } else {
-                log_event(LOG_LEVEL_FATAL, "unknown api");
+                log_internal_event(LOG_LEVEL_FATAL, "unknown api");
                 return NULL;
         }
         snprintf(filename + strlen(filename), sizeof(filename), ".%s", file_ending);
@@ -101,7 +102,7 @@ char *sge_get_vertex_shader_path_for_format(sge_render *render, sge_vertex_forma
 
         sprintf(path, "%s\\%s\\%s", cwd, SHADER_PATH_NAME, filename);
 
-        log_event(LOG_LEVEL_INFO, "choose %s as vert filepath", path);
+        log_internal_event(LOG_LEVEL_INFO, "choose %s as vert filepath", path);
 
         return path;
 
@@ -111,12 +112,12 @@ char *sge_get_fragment_shader_path_for_format(sge_render *render, sge_vertex_for
         char *cwd = get_current_working_directory();
         char *path = allocate_memory(1024, MEMORY_TAG_SHADER);
         if (path == NULL) {
-                log_event(LOG_LEVEL_FATAL, "failed to allocate for frag shader path");
+                log_internal_event(LOG_LEVEL_FATAL, "failed to allocate for frag shader path");
                 return NULL;
         }
 
         if (format->attribute_count == 0) {
-                log_event(LOG_LEVEL_FATAL, "no attributes for shader");
+                log_internal_event(LOG_LEVEL_FATAL, "no attributes for shader");
                 return path;
         }
 
@@ -152,14 +153,14 @@ char *sge_get_fragment_shader_path_for_format(sge_render *render, sge_vertex_for
         if (render->api == RENDER_API_VULKAN) {
                 strcat(file_ending, ".spv");
         } else {
-                log_event(LOG_LEVEL_FATAL, "unknown api");
+                log_internal_event(LOG_LEVEL_FATAL, "unknown api");
                 return NULL;
         }
         snprintf(filename + strlen(filename), sizeof(filename), ".%s", file_ending);
 
         sprintf(path, "%s\\%s\\%s", cwd, SHADER_PATH_NAME, filename);
 
-        log_event(LOG_LEVEL_INFO, "choose %s as frag filepath", path);
+        log_internal_event(LOG_LEVEL_INFO, "choose %s as frag filepath", path);
 
         return path;
 }
@@ -167,16 +168,16 @@ char *sge_get_fragment_shader_path_for_format(sge_render *render, sge_vertex_for
 
 SGE_RESULT sge_create_shader_if_not_exist(char *shader_path, sge_vertex_format *format, sge_render *render) {
         if (shader_path == NULL) {
-                log_event(LOG_LEVEL_ERROR, "tried creating shader but no path given");
+                log_internal_event(LOG_LEVEL_ERROR, "tried creating shader but no path given");
                 return SGE_ERROR;
         }
 
         if (sge_file_exists(shader_path)) {
-                log_event(LOG_LEVEL_INFO, "shader exists: %s", shader_path);
+                log_internal_event(LOG_LEVEL_INFO, "shader exists: %s", shader_path);
                 return SGE_SUCCESS;
         }
 
-        log_event(LOG_LEVEL_INFO, "shader no existi, creating");
+        log_internal_event(LOG_LEVEL_INFO, "shader no existi, creating");
 
         if (!sge_create_shader(shader_path, format, render)) {
                 return SGE_ERROR;
@@ -191,26 +192,26 @@ SGE_RESULT sge_create_shader(char *shader_path, sge_vertex_format *format, sge_r
 
         get_last_string_index(shader_path, '\\', &last_slash_index);
         strncpy(filename, shader_path + last_slash_index+1, strlen(shader_path) - last_slash_index-1);
-        log_event(LOG_LEVEL_INFO, "File name: %s", filename);
+        log_internal_event(LOG_LEVEL_INFO, "File name: %s", filename);
 
         strncpy(filepath, shader_path, last_slash_index);
-        log_event(LOG_LEVEL_INFO, "Path where file is: %s", filepath);
+        log_internal_event(LOG_LEVEL_INFO, "Path where file is: %s", filepath);
 
         if (!create_directory_if_not_exists(filepath)) {
-                log_event(LOG_LEVEL_ERROR, "failed to create dir");
+                log_internal_event(LOG_LEVEL_ERROR, "failed to create dir");
                 return SGE_ERROR;
         }
 
         char ending[128] = {0};
         get_file_ending(filename, ending);
-        log_event(LOG_LEVEL_INFO, "File ending: %s", ending);
+        log_internal_event(LOG_LEVEL_INFO, "File ending: %s", ending);
 
         char filename_no_ending[255] = {0};
         strncpy(filename_no_ending, filename, strlen(filename) - 1 - strlen(ending)); //-1 = .
 
         char file_shader_no_compiled[1024] = {0};
         sprintf(file_shader_no_compiled, "%s\\%s", filepath, filename_no_ending);
-        log_event(LOG_LEVEL_INFO, "Raw shader file: %s", file_shader_no_compiled);
+        log_internal_event(LOG_LEVEL_INFO, "Raw shader file: %s", file_shader_no_compiled);
 
         if (!sge_file_exists(file_shader_no_compiled)) {
                 if (create_raw_shader_file(file_shader_no_compiled, filename_no_ending, format) != SGE_SUCCESS) {
@@ -219,13 +220,13 @@ SGE_RESULT sge_create_shader(char *shader_path, sge_vertex_format *format, sge_r
         }
 
         if (compile_shader_file(file_shader_no_compiled, render) != SGE_SUCCESS) {
-                log_event(LOG_LEVEL_ERROR, "failed to compile shader, trying to rebuild raw shader file");
+                log_internal_event(LOG_LEVEL_ERROR, "failed to compile shader, trying to rebuild raw shader file");
                 if (create_raw_shader_file(file_shader_no_compiled, filename_no_ending, format) != SGE_SUCCESS) {
-                        log_event(LOG_LEVEL_ERROR, "failed to build raw shader file");
+                        log_internal_event(LOG_LEVEL_ERROR, "failed to build raw shader file");
                         return SGE_ERROR;
                 }
                 if (compile_shader_file(file_shader_no_compiled, render) != SGE_SUCCESS) {
-                        log_event(LOG_LEVEL_ERROR, "failed to compile rebuild shader");
+                        log_internal_event(LOG_LEVEL_ERROR, "failed to compile rebuild shader");
                         return SGE_ERROR;
                 }
         }
@@ -236,13 +237,13 @@ SGE_RESULT sge_create_shader(char *shader_path, sge_vertex_format *format, sge_r
 SGE_RESULT create_raw_shader_file(char *filepath, char *filename, sge_vertex_format *format) {
         char ending[128] = {0};
         get_file_ending(filename, ending);
-        log_event(LOG_LEVEL_INFO, "File ending: %s", ending);
+        log_internal_event(LOG_LEVEL_INFO, "File ending: %s", ending);
         SGE_BOOL is_vert = strcmp(ending, "vert") == 0 ? SGE_TRUE : SGE_FALSE;
         SGE_BOOL is_frag = strcmp(ending, "frag") == 0 ? SGE_TRUE : SGE_FALSE;
 
         FILE *fd = fopen(filepath, "w");
         if (fd == NULL) {
-                log_event(LOG_LEVEL_ERROR, "Failed to open file to write: %s", filepath);
+                log_internal_event(LOG_LEVEL_ERROR, "Failed to open file to write: %s", filepath);
                 return SGE_ERROR;
         }
 
@@ -269,7 +270,7 @@ SGE_RESULT create_raw_shader_file(char *filepath, char *filename, sge_vertex_for
                                         strcat(layout_string, "vec4");
                                 } break;
                                 default: {
-                                        log_event(LOG_LEVEL_ERROR, "unsupported component count in shader creation");
+                                        log_internal_event(LOG_LEVEL_ERROR, "unsupported component count in shader creation");
                                         return SGE_ERROR;
                                 };
                         }
@@ -283,7 +284,7 @@ SGE_RESULT create_raw_shader_file(char *filepath, char *filename, sge_vertex_for
                                         strcat(layout_string, " inColor");
                                 } break;
                                 default: {
-                                        log_event(LOG_LEVEL_ERROR, "unsupported location attribute");
+                                        log_internal_event(LOG_LEVEL_ERROR, "unsupported location attribute");
                                         return SGE_ERROR;
                                 };
                         }
@@ -325,7 +326,7 @@ SGE_RESULT create_raw_shader_file(char *filepath, char *filename, sge_vertex_for
                                         strcat(layout_string, "vec4");
                                 } break;
                                 default: {
-                                        log_event(LOG_LEVEL_ERROR, "unsupported component count in shader creation");
+                                        log_internal_event(LOG_LEVEL_ERROR, "unsupported component count in shader creation");
                                         return SGE_ERROR;
                                 };
                         }
@@ -336,7 +337,7 @@ SGE_RESULT create_raw_shader_file(char *filepath, char *filename, sge_vertex_for
                                         strcat(layout_string, " fragColor");
                                 } break;
                                 default: {
-                                        log_event(LOG_LEVEL_ERROR, "unsupported location attribute: %d", attr.location);
+                                        log_internal_event(LOG_LEVEL_ERROR, "unsupported location attribute: %d", attr.location);
                                         return SGE_ERROR;
                                 };
                         }
@@ -370,12 +371,12 @@ SGE_RESULT create_raw_shader_file(char *filepath, char *filename, sge_vertex_for
                                         strcat(main_string, "    gl_Position = ubo.proj * ubo.view * ubo.model * inPosition;\n");
                                 }break;
                                 default: {
-                                        log_event(LOG_LEVEL_ERROR, "Invalid position component count: %u", pos_attr->components);
+                                        log_internal_event(LOG_LEVEL_ERROR, "Invalid position component count: %u", pos_attr->components);
                                         return SGE_ERROR;
                                 }
                         }
                 } else {
-                        log_event(LOG_LEVEL_ERROR, "No position attribute found in vertex format");
+                        log_internal_event(LOG_LEVEL_ERROR, "No position attribute found in vertex format");
                         return SGE_ERROR;
                 }
 
@@ -388,7 +389,7 @@ SGE_RESULT create_raw_shader_file(char *filepath, char *filename, sge_vertex_for
                                         strcat(main_string, "    fragColor = inColor;\n");
                                 } break;
                                 default: {
-                                        log_event(LOG_LEVEL_ERROR, "unsupported attribute for shader creation");
+                                        log_internal_event(LOG_LEVEL_ERROR, "unsupported attribute for shader creation");
                                         return SGE_ERROR;
                                 };
                         }
@@ -423,7 +424,7 @@ SGE_RESULT create_raw_shader_file(char *filepath, char *filename, sge_vertex_for
                                         case 3: strcat(layout_string, "vec3"); break;
                                         case 4: strcat(layout_string, "vec4"); break;
                                         default: {
-                                                log_event(LOG_LEVEL_ERROR, "unsupported component count in shader creation");
+                                                log_internal_event(LOG_LEVEL_ERROR, "unsupported component count in shader creation");
                                                 return SGE_ERROR;
                                         }
                                 }
@@ -431,7 +432,7 @@ SGE_RESULT create_raw_shader_file(char *filepath, char *filename, sge_vertex_for
                                 switch (attr.location) {
                                         case SGE_SHADER_COLOR: strcat(layout_string, " fragColor"); break;
                                         default: {
-                                                log_event(LOG_LEVEL_ERROR, "unsupported location attribute");
+                                                log_internal_event(LOG_LEVEL_ERROR, "unsupported location attribute");
                                                 return SGE_ERROR;
                                         }
                                 }
@@ -451,7 +452,7 @@ SGE_RESULT create_raw_shader_file(char *filepath, char *filename, sge_vertex_for
                         fprintf(fd, "}\n");
                 }
         }else {
-                log_event(LOG_LEVEL_ERROR, "unsupported shader type");
+                log_internal_event(LOG_LEVEL_ERROR, "unsupported shader type");
                 return SGE_ERROR;
         }
 
@@ -478,24 +479,24 @@ SGE_RESULT compile_shader_file(char *uncompiled_shader_file_path, sge_render *re
 #ifdef WIN32
                 snprintf(command, sizeof(command), "%s\\Bin\\glslc.exe %s -o %s", vulkan_sdk, uncompiled_shader_file_path, spv_path);
 #elif UNIX
-                log_event(LOG_LEVEL_FATAL, "unsupported os");
+                log_internal_event(LOG_LEVEL_FATAL, "unsupported os");
                 return SGE_ERROR;
 #else
-                log_event(LOG_LEVEL_FATAL, "unsupported os");
+                log_internal_event(LOG_LEVEL_FATAL, "unsupported os");
                 return SGE_ERROR;
 #endif
 
                 int result = system(command);
                 if (result != 0) {
-                        log_event(LOG_LEVEL_ERROR, "failed to compile shader");
+                        log_internal_event(LOG_LEVEL_ERROR, "failed to compile shader");
                         return SGE_ERROR;
                 }
         } else {
-                log_event(LOG_LEVEL_ERROR, "unsupported api fpr shader compiling");
+                log_internal_event(LOG_LEVEL_ERROR, "unsupported api fpr shader compiling");
                 return SGE_ERROR;
         }
 
-        log_event(LOG_LEVEL_INFO, "compiled shader");
+        log_internal_event(LOG_LEVEL_INFO, "compiled shader");
         return SGE_SUCCESS;
 }
 

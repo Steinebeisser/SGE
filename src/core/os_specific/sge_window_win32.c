@@ -6,15 +6,15 @@
 #include <windows.h>
 
 
-#include "sge_window.h"
-#include "../logging.h"
-#include "../../utils/steintime.h"
-#include "../input.h"
+#include "core/platform/sge_window.h"
+#include "core/sge_internal_logging.h"
+#include "utils/sge_time.h"
+#include "core/input.h"
 #include <windowsx.h>
 
-#include "os_utils.h"
-#include "../memory_control.h"
-#include "../../renderer/sge_render.h"
+#include "core/platform/sge_platform.h"
+#include "core/memory_control.h"
+#include "renderer/sge_render.h"
 #include "../../renderer/vulkan_renderer/vulkan_renderer.h"
 #ifdef WIN32
 
@@ -29,6 +29,8 @@ bool is_hidden = false;
 bool has_changed = false;
 bool ignore_next_mousemove = true;
 mouse_pos last_visible_pos = {0,0};
+
+extern bool is_tracking_enabled;
 
 
 mouse_pos get_window_center(HWND hwnd) {
@@ -69,6 +71,10 @@ mouse_pos screen_to_window(sge_render *render, mouse_pos screen_pos) {
 
 
 void set_window_title(HWND hwnd, char *title, ...) {
+        if (!hwnd) {
+                log_internal_event(LOG_LEVEL_ERROR, "tried to update window title without valid hwnd");
+                return;
+        }
         char title_message[256];
         va_list args;
         va_start(args, title);
@@ -83,24 +89,33 @@ LRESULT CALLBACK wndProc(const HWND hwnd, const UINT uMsg, const WPARAM wparam, 
                 case WM_CLOSE:
                         is_window_open = 0;
                         DestroyWindow(hwnd);
-                        log_event(LOG_LEVEL_INFO, "Window got closed by close");
+                        log_internal_event(LOG_LEVEL_INFO, "Window got closed by close");
                         return 0;
                 case WM_DESTROY:
                         is_window_open = 0;
                         PostQuitMessage(0);
-                        log_event(LOG_LEVEL_INFO, "Window got closed by destroy");
+                        log_internal_event(LOG_LEVEL_INFO, "Window got closed by destroy");
                         return 0;
                 case WM_KEYDOWN: { //https://learn.microsoft.com/de-de/windows/win32/inputdev/
                         //printf("KEY DOWN: %llu\n", wparam);
                         //printf("PARAMS KEY DOWN %llu\n", lparam);
+                        if (!is_tracking_enabled) {
+                                break;
+                        }
                         key_states[wparam] = 1;
                 } break;
                 case WM_KEYUP: {
                         //printf("KEY UP: %llu\n", wparam);
                         //printf("PARAMS KEY UP %llu\n", lparam);
+                        if (!is_tracking_enabled) {
+                                break;
+                        }
                         key_states[wparam] = 0;
                 } break;
                 case WM_MOUSEMOVE: {
+                        if (!is_tracking_enabled) {
+                                break;
+                        }
                         if (ignore_next_mousemove) {
                                 ignore_next_mousemove = false;
                                 break;
@@ -142,45 +157,69 @@ LRESULT CALLBACK wndProc(const HWND hwnd, const UINT uMsg, const WPARAM wparam, 
 
 
                 case WM_LBUTTONDOWN: {
+                        if (!is_tracking_enabled) {
+                                break;
+                        }
                         printf("PRESSED L MOUSEBUTTON\n");
                         mouse_states[MBUTTON_LEFT] = 1;
                 } break;
                 case WM_LBUTTONUP: {
+                        if (!is_tracking_enabled) {
+                                break;
+                        }
                         mouse_states[MBUTTON_LEFT] = 0;
                 } break;
                 case WM_LBUTTONDBLCLK: {
+                        if (!is_tracking_enabled) {
+                                break;
+                        }
                         printf("DOUBLE CLICK WITH MOUSE\n");
                 } break;
 
                 case WM_RBUTTONDOWN: {
+                        if (!is_tracking_enabled) {
+                                break;
+                        }
                         printf("RIGHT CLICK: %llu\n", wparam);
                         mouse_states[MBUTTON_RIGHT] = 1;
                 } break;
                 case WM_RBUTTONUP: {
+                        if (!is_tracking_enabled) {
+                                break;
+                        }
                         printf("RIGHT CLICK UP: %llu\n", wparam);
                         mouse_states[MBUTTON_RIGHT] = 0;
                 } break;
 
                 case WM_MBUTTONDOWN: {
+                        if (!is_tracking_enabled) {
+                                break;
+                        }
                         mouse_states[MBUTTON_MIDDLE] = 1;
                 } break;
                 case WM_MBUTTONUP: {
+                        if (!is_tracking_enabled) {
+                                break;
+                        }
                         mouse_states[MBUTTON_MIDDLE] = 0;
                 } break;
 
                 case WM_XBUTTONDOWN: { //todo side buttons
+                        if (!is_tracking_enabled) {
+                                break;
+                        }
 
                 } break;
 
 
                 case WM_SIZE: {
-                        log_event(LOG_LEVEL_INFO, "Resize happened");
-                        printf("RESIZE HAPPENED\n");
+                        //printf("RESIZE HAPPENED\n");
                         width = LOWORD(lparam);
                         height = HIWORD(lparam);
+                        log_internal_event(LOG_LEVEL_INFO, "Resize happened: %d:%d", width, height);
 
 
-                        printf("width: %d, height: %d\n", width, height);
+                        //printf("width: %d, height: %d\n", width, height);
                         is_resize = true;
                 } break;
                 case WM_SETCURSOR: {
@@ -206,7 +245,7 @@ sge_window *sge_window_create(const int width, const int height, const char *win
                 const DWORD last_error = GetLastError();
                 char error_message[256];
                 snprintf(error_message, sizeof(error_message), "Failed to Register window Class. Error. %dw", last_error);
-                log_event(LOG_LEVEL_FATAL, error_message);
+                log_internal_event(LOG_LEVEL_FATAL, error_message);
         }
 
         const HWND hwnd = CreateWindowEx(
@@ -229,12 +268,12 @@ sge_window *sge_window_create(const int width, const int height, const char *win
                 const DWORD last_error = GetLastError();
                 char error_message[256];
                 snprintf(error_message, sizeof(error_message), "Failed to create Window. Error. %dw", last_error);
-                log_event(LOG_LEVEL_FATAL, error_message);
+                log_internal_event(LOG_LEVEL_FATAL, error_message);
         }
 
         //https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-showwindow?redirectedfrom=MSDN
-        //ShowWindow(hwnd, SW_SHOWDEFAULT);
-        log_event(LOG_LEVEL_INFO, "Created Window");
+        ShowWindow(hwnd, SW_SHOWDEFAULT);
+        log_internal_event(LOG_LEVEL_INFO, "Created Window");
         is_window_open = 1;
 
         sge_platform_handle handle = {
@@ -244,7 +283,7 @@ sge_window *sge_window_create(const int width, const int height, const char *win
 
         sge_window *window = allocate_memory(sizeof(sge_window), MEMORY_TAG_WINDOW);
         if (window == NULL) {
-                log_event(LOG_LEVEL_FATAL, "Failed to allocate memory for window struct");
+                log_internal_event(LOG_LEVEL_FATAL, "Failed to allocate memory for window struct");
                 return NULL;
         }
         window->handle = handle;
@@ -256,20 +295,20 @@ sge_window *sge_window_create(const int width, const int height, const char *win
 
 SGE_BOOL sge_window_show(sge_window *window) {
         if (!ShowWindow(window->handle.hwnd, SW_SHOWDEFAULT)) {
-                log_event(LOG_LEVEL_ERROR, "Failed to Show Window");
+                log_internal_event(LOG_LEVEL_ERROR, "Failed to Show Window");
                 return SGE_FALSE;
         }
-        log_event(LOG_LEVEL_INFO, "Showed Window");
+        log_internal_event(LOG_LEVEL_INFO, "Showed Window");
         is_window_open = 1;
         return SGE_TRUE;
 }
 
 SGE_BOOL sge_window_hide(sge_window *window) {
         if (!ShowWindow(window->handle.hwnd, SW_HIDE)) {
-                log_event(LOG_LEVEL_ERROR, "Failed to hide Window");
+                log_internal_event(LOG_LEVEL_ERROR, "Failed to hide Window");
                 return SGE_FALSE;
         }
-        log_event(LOG_LEVEL_INFO, "Showed Window");
+        log_internal_event(LOG_LEVEL_INFO, "Showed Window");
         is_window_open = 0;
         return SGE_TRUE;
 }
@@ -299,17 +338,23 @@ void show_mouse() {
         SetCursorPos(last_visible_pos.x, last_visible_pos.y);
 }
 
-void update_frame(const int target_fps, const DWORD frame_start_ms, sge_window *window) {
-
+void update_frame(const int target_fps, DWORD frame_start_ms, sge_window *window) {
+        if (!frame_start_ms) {
+                log_internal_event(LOG_LEVEL_ERROR, "no start time passed, setting to now -20");
+                frame_start_ms = get_current_ms_time();
+                frame_start_ms -= 20;
+        }
         //printf("New Frame\n");
         delta_mouse_pos.x = 0;
         delta_mouse_pos.y = 0;
-        update_key_states();
+        if (is_tracking_enabled) {
+                update_key_states();
+        }
 
-        if (height != window->height) {
+        if (height && height != window->height) {
                 window->height = height;
         }
-        if (width != window->width) {
+        if (width && width != window->width) {
                 window->width = width;
         }
 

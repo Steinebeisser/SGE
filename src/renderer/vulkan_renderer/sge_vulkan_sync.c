@@ -3,7 +3,8 @@
 //
 
 #include "sge_vulkan_sync.h"
-#include "../../core/memory_control.h"
+#include "core/memory_control.h"
+#include "vulkan_structs.h"
 
 SGE_RESULT sge_vulkan_sync_objects_create(sge_render *render) {
         sge_vulkan_context *vk_context = (sge_vulkan_context *)render->api_context;

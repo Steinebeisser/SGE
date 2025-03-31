@@ -2,21 +2,23 @@
 // Created by Geisthardt on 26.02.2025.
 //
 
-#include "logging.h"
+#include "core/logging.h"
 
 #include <bemapiset.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stdbool.h>
 
-#include "../utils/steintime.h"
-#include "../utils/steinfile.h"
-#include "../utils/steinstring.h"
-#include "../utils/steinutils.h"
-#include "memory_control.h"
+#include "utils/sge_time.h"
+#include "utils/sge_file.h"
+#include "utils/sge_string.h"
+#include "utils/sge_utils.h"
+#include "core/memory_control.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "core/sge_internal_logging.h"
+
 const int LOG_BUFFER_SIZE = 4096;
 const int TEMP_BUFFER_SIZE = 2048;
 
@@ -42,10 +44,10 @@ int write_buffer_to_log_file();
 int start_logger() {
         using_logging = true;
         level_padding = get_longest_element_in_array(log_levels);
-        log_event(LOG_LEVEL_INFO, "Initializing Logger");
+        log_internal_event(LOG_LEVEL_INFO, "Initializing Logger");
         log_buffer = allocate_memory(LOG_BUFFER_SIZE, MEMORY_TAG_LOGGER);
         started_logging = TRUE;
-        log_event(LOG_LEVEL_INFO, "Log started");
+        log_internal_event(LOG_LEVEL_INFO, "Log started");
         char filename[100];
         char filepath[200];
         filepath[0] = '\0';
@@ -57,44 +59,48 @@ int start_logger() {
         filename[strlen(filename)+ 1] = '\0';
 
         const char *current_working_directory = get_current_working_directory();
-        printf("%s\n", current_working_directory);
+        //printf("%s\n", current_working_directory);
         strcat(filepath, current_working_directory);
-        printf("%s\n", filepath);
+        //printf("%s\n", filepath);
         strcat(filepath, "\\");
         strcat(filepath, "logs");
 
-        printf("FILEPATH: %s\n", filepath);
+        //printf("FILEPATH: %s\n", filepath);
 
         char temp[32];
         if (create_directory_if_not_exists(filepath) != SGE_TRUE) {
+                printf("Failed creating directory for logger\n");
                 return 1;
         }
         const int current_year = get_current_year();
         snprintf(temp, sizeof(temp), "\\%d", current_year);
         strcat(filepath, temp);
         if (create_directory_if_not_exists(filepath) != SGE_TRUE) {
+                printf("Failed creating directory for logger\n");
                 return 1;
         }
         const int current_month = get_current_month();
         snprintf(temp, sizeof(temp), "\\%02d", current_month);
         strcat(filepath, temp);
         if (create_directory_if_not_exists(filepath) != SGE_TRUE) {
+                printf("Failed creating directory for logger\n");
                 return 1;
         }
         const int current_day = get_current_day();
         snprintf(temp, sizeof(temp), "\\%02d", current_day);
         strcat(filepath, temp);
         if (create_directory_if_not_exists(filepath) != SGE_TRUE) {
+                printf("Failed creating directory for logger\n");
                 return 1;
         }
         strcat(filepath, "\\");
         strcat(filepath, filename);
-        printf("PATH: %s\n", filepath);
+        //printf("PATH: %s\n", filepath);
         log_file_filepath = allocate_memory(strlen(filepath), MEMORY_TAG_LOGGER);
         strcpy(log_file_filepath, filepath);
         log_file = fopen(filepath, "w");
         if (log_file == NULL) {
-                printf("Error opening file\n");
+                printf("Error creating log file\n");
                 return 1;
         }
 
@@ -113,16 +119,18 @@ int start_logger() {
 }
 
 void allocation_error() {
-        log_event(LOG_LEVEL_FATAL, "Failed to allocate Memory");
+        log_internal_event(LOG_LEVEL_FATAL, "Failed to allocate Memory");
 }
 
+
+
 void log_event(const log_level level, const char *message, ...) {
-        if (!is_debug_2 && level != LOG_LEVEL_FATAL) {
+        if (!using_logging) {
+                printf("!START LOGGING BEFORE TRYING TO LOG!!\n");
                 return;
         }
-        if (!using_logging) {
+        if (!is_debug_2 && level != LOG_LEVEL_FATAL) {
                 return;
-                printf("START LOGGING BEFORE TRYING TO LOG");
         }
 
         char formatted_message[1024];
@@ -139,7 +147,7 @@ void log_event(const log_level level, const char *message, ...) {
                 if (temp_buffer == NULL) {
                         temp_buffer = malloc(TEMP_BUFFER_SIZE);
                         if (temp_buffer == NULL) {
-                                log_event(LOG_LEVEL_FATAL, "FAILED TO ALLOCATE MEMORY TO TEMP BUFFER");
+                                log_internal_event(LOG_LEVEL_FATAL, "FAILED TO ALLOCATE MEMORY TO TEMP BUFFER");
                                 return;
                         }
                         memset(temp_buffer, 0, TEMP_BUFFER_SIZE);
@@ -182,7 +190,7 @@ void log_event(const log_level level, const char *message, ...) {
                 free(temp_buffer);
                 temp_buffer = NULL;
                 cleared_temp_buffer = true;
-                log_event(LOG_LEVEL_INFO, "Copied logs from temp to correct buffer");
+                log_internal_event(LOG_LEVEL_INFO, "Copied logs from temp to correct buffer");
         }
 
 
@@ -204,7 +212,7 @@ void log_event(const log_level level, const char *message, ...) {
                         stop_logger();
                         return;
                 }
-                log_event(LOG_LEVEL_TRACE, "Buffer full, writing to file");
+                log_internal_event(LOG_LEVEL_TRACE, "Buffer full, writing to file");
         }
 
         snprintf(log_buffer + log_buffer_index, log_entry_size + 1, "[%*s]  [%17s]  %s\n",

@@ -2,15 +2,15 @@
 // Created by Geisthardt on 07.03.2025.
 //
 
-#include "sge_math.h"
+#include "utils/sge_math.h"
 
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "../core/logging.h"
-#include "../core/memory_control.h"
+#include "core/memory_control.h"
+#include "core/sge_internal_logging.h"
 
 int amount_chars_in_float(float num);
 
@@ -120,7 +120,7 @@ void sge_m4_set_identity(m4 matrix) {
 
 void sge_m4_set_value(m4 matrix, int row, int col, float value) {
         if (row > 3 || col > 3 || row < 0 || col < 0) {
-                log_event(LOG_LEVEL_ERROR, "invalid dimensions in m4");
+                log_internal_event(LOG_LEVEL_ERROR, "invalid dimensions in m4");
                 return;
         }
         matrix[row][col] = value;
@@ -128,7 +128,7 @@ void sge_m4_set_value(m4 matrix, int row, int col, float value) {
 
 float sge_m4_get_value(m4 matrix, int row, int col) {
         if (row > 3 || col > 3 || row < 0 || col < 0) {
-                log_event(LOG_LEVEL_ERROR, "invalid dimensions in m4");
+                log_internal_event(LOG_LEVEL_ERROR, "invalid dimensions in m4");
                 return 0;
         }
         float value = matrix[row][col];
@@ -248,7 +248,7 @@ void sge_m4_print(m4 matrix) {
         snprintf(matrix_string + strlen(matrix_string), sizeof(matrix_string), "\n");
                         //printf("%f ", matrix[i][j]);
 
-        printf(matrix_string);
+        //printf(matrix_string);
 }
 
 vec4 sge_m4_transform_vec4(m4 matrix, vec4 vec) {

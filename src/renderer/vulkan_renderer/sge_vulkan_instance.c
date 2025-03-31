@@ -4,8 +4,13 @@
 
 #include "sge_vulkan_instance.h"
 
-#include "../../core/logging.h"
-#include "../../core/memory_control.h"
+
+#include "sge_vulkan_device.h"
+#include "sge_vulkan_surface.h"
+#include "core/sge_internal_logging.h"
+#include "core/memory_control.h"
+#include "vulkan_structs.h"
+#include <vulkan/vulkan_win32.h>
 
 const char *validation_layers[] = {"VK_LAYER_KHRONOS_validation"};
 
@@ -74,10 +79,10 @@ SGE_RESULT sge_vulkan_instance_create(sge_render *render, sge_render_settings *r
 
         const VkResult result = vkCreateInstance(&create_info, vk_context->sge_allocator, &instance);
         if (result != VK_SUCCESS) {
-                log_event(LOG_LEVEL_FATAL, "Failed to initialize vk_instance: %d", result);
+                log_internal_event(LOG_LEVEL_FATAL, "Failed to initialize vk_instance: %d", result);
                 return SGE_ERROR;
         }
-        log_event(LOG_LEVEL_INFO, "Created Vk Instance");
+        log_internal_event(LOG_LEVEL_INFO, "Created Vk Instance");
 
         vk_context->instance = instance;
 

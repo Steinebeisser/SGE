@@ -5,7 +5,7 @@
 #ifndef SGE_VULKAN_UNIFORM_H
 #define SGE_VULKAN_UNIFORM_H
 
-#include "../sge_render.h"
+#include "renderer/sge_render.h"
 
 SGE_RESULT sge_vulkan_update_uniform_buffer(sge_render *render, sge_region *region);
 

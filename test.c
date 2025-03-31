@@ -1,22 +1,10 @@
 //
 // Created by Geisthardt on 26.02.2025.
 //
+
+
+#include "SGE.h"
 #include <signal.h>
-#include <stdio.h>
-#include <windows.h>
-#include <unistd.h>
-#include <vulkan/vulkan_core.h>
-
-
-#include "src/core/memory_control.h"
-#include "src/utils/steintime.h"
-#include "src/core/logging.h"
-#include "src/core/os_specific/sge_window.h"
-#include "src/core/input.h"
-#include "src/renderer/sge_render_file.h"
-#include "src/renderer/vulkan_renderer/vulkan_renderer.h"
-#include "src/renderer/sge_render.h"
-#include "src/utils/steinutils.h"
 
 
 void create_cube();
@@ -28,11 +16,11 @@ void seg_fault_handler(int sig) {
 
 int main(void) {
         atexit(terminate_program);
-        signal(SIGSEGV, seg_fault_handler);
+        //signal(SIGSEGV, seg_fault_handler);
         if (start_logger() != 0) {
                 return 1;
         }
-        log_event(LOG_LEVEL_INFO, "TEST EVENT");
+        log_event(LOG_LEVEL_INFO, "TEST EVENT: %d", 20);
 
         sge_window *window= sge_window_create(700, 500, "Test Window");
         sge_render *render = sge_render_create(RENDER_API_VULKAN, window);
@@ -48,7 +36,6 @@ int main(void) {
         settings->vulkan.use_dynamic_rendering = true;
         settings->vulkan.use_sge_allocator = false;
         sge_render_initialize(render, settings);
-
 
         const int target_fps = 0;
 
@@ -290,8 +277,8 @@ int main(void) {
         log_event(LOG_LEVEL_INFO, "finished creating test renderable");
 
         sge_region_add_renderable(main_region, test);
-        sge_region_add_renderable(main_region, cube);
-        sge_region_add_renderable(secondary_region, healthbar);
+        //sge_region_add_renderable(main_region, cube);
+        //sge_region_add_renderable(secondary_region, healthbar);
 
         printf("ADDED REGION\n");
         //printf("%p\n", file->sections[1].data);
@@ -416,8 +403,6 @@ int main(void) {
         stop_logger();
 
         log_event(LOG_LEVEL_WARNING, "NO LOGGER ACTIVE");
-
-        sleep(3);
 
         log_event(LOG_LEVEL_FATAL, "ERROR HIHA");
 

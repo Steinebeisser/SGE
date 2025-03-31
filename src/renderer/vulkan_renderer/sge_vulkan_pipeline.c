@@ -5,8 +5,10 @@
 #include "sge_vulkan_pipeline.h"
 
 #include "sge_vulkan_shader.h"
-#include "../../core/logging.h"
-#include "../../core/memory_control.h"
+#include "core/sge_internal_logging.h"
+#include "core/memory_control.h"
+#include "vulkan_structs.h"
+#include "renderer/shader/sge_shader_utils.h"
 
 
 SGE_RESULT sge_vulkan_pipeline_create(sge_render *render) {
@@ -25,7 +27,7 @@ SGE_RESULT sge_vulkan_pipeline_create(sge_render *render) {
         VkShaderModule vertex_shader_module = sge_vulkan_shader_load_old(render, "simple_shader.vert.spv");
         VkShaderModule fragment_shader_module = sge_vulkan_shader_load_old(render, "simple_shader.frag.spv");
         if (!vertex_shader_module || !fragment_shader_module) {
-                log_event(LOG_LEVEL_FATAL, "failed getting shaders");
+                log_internal_event(LOG_LEVEL_FATAL, "failed getting shaders");
         }
 
         VkPipelineShaderStageCreateInfo vertex_shader_stage_create_info = {
@@ -194,7 +196,7 @@ SGE_RESULT sge_vulkan_pipeline_create(sge_render *render) {
 
         VkResult layout_result = vkCreatePipelineLayout(vk_context->device, &layout_create_info, vk_context->sge_allocator, &layout);
         if (layout_result != VK_SUCCESS) {
-                log_event(LOG_LEVEL_FATAL, "failed creating pipeline layout: %d", layout_result);
+                log_internal_event(LOG_LEVEL_FATAL, "failed creating pipeline layout: %d", layout_result);
                 return SGE_ERROR;
         }
 
@@ -226,12 +228,12 @@ SGE_RESULT sge_vulkan_pipeline_create(sge_render *render) {
         VkResult pipeline_result = vkCreateGraphicsPipelines(vk_context->device, VK_NULL_HANDLE, 1,
                                                                 &graphics_pipeline_create_info,vk_context->sge_allocator, &graphics_pipeline);
         if (pipeline_result != VK_SUCCESS) {
-                log_event(LOG_LEVEL_FATAL, "Failed to create pipeline: %d", pipeline_result);
+                log_internal_event(LOG_LEVEL_FATAL, "Failed to create pipeline: %d", pipeline_result);
                 return SGE_ERROR;
         }
 
         vk_context->pipeline = graphics_pipeline;
-        log_event(LOG_LEVEL_INFO, "Created pipeline");
+        log_internal_event(LOG_LEVEL_INFO, "Created pipeline");
         return SGE_SUCCESS;
 }
 
@@ -246,14 +248,15 @@ SGE_RESULT sge_vulkan_pipeline_create_specific_format(
         ) {
         sge_vulkan_context *vk_context = render->api_context;
 
-        VkShaderModule shaders[5] = {NULL}; //vert, tess cont, tess eval, geom, frag
-        char *shader_paths[5] = {NULL};
+        VkShaderModule shaders[5] = {0}; //vert, tess cont, tess eval, geom, frag
+        char *shader_paths[5] = {0};
         uint32_t shader_stage_count = 0;
-        VkPipelineShaderStageCreateInfo shader_stages[5];
+        VkPipelineShaderStageCreateInfo shader_stages[5] = {0};
 
 
-        log_event(LOG_LEVEL_INFO, "Getting shader paths");
+        log_internal_event(LOG_LEVEL_INFO, "Getting shader paths");
         shader_paths[0] = sge_get_vertex_shader_path_for_format(render, format, settings->is_3d);
+        log_internal_event(LOG_LEVEL_INFO, "got vertex shader path");
         shader_paths[4] = sge_get_fragment_shader_path_for_format(render, format, settings->is_3d);
 
         if (settings->tesselation_enabled) {
@@ -265,7 +268,7 @@ SGE_RESULT sge_vulkan_pipeline_create_specific_format(
         if (settings->geometry_enabled) {
                 //todo
         }
-        log_event(LOG_LEVEL_INFO, "^GOT SHADER PATHS");
+        log_internal_event(LOG_LEVEL_INFO, "^GOT SHADER PATHS");
 
         for (int i = 0; i < 5; ++i) {
                 if (!shader_paths[i]) {
@@ -279,7 +282,7 @@ SGE_RESULT sge_vulkan_pipeline_create_specific_format(
                         sge_create_shader(shader_paths[i], format, render);
                         shaders[i] = sge_vulkan_shader_load(render, shader_paths[i]);
                         if (!shaders[i]) {
-                                log_event(LOG_LEVEL_ERROR, "failed to load shader %s", shader_paths[i]);
+                                log_internal_event(LOG_LEVEL_ERROR, "failed to load shader %s", shader_paths[i]);
                                 return SGE_ERROR;
                         }
                 }
@@ -304,7 +307,7 @@ SGE_RESULT sge_vulkan_pipeline_create_specific_format(
                                 stage = VK_SHADER_STAGE_FRAGMENT_BIT;
                         } break;
                         default: {
-                                log_event(LOG_LEVEL_ERROR, "unknown shader stage");
+                                log_internal_event(LOG_LEVEL_ERROR, "unknown shader stage");
                                 return SGE_ERROR;
                         }
                 }
@@ -345,7 +348,7 @@ SGE_RESULT sge_vulkan_pipeline_create_specific_format(
         }
 
         for (uint32_t i = 0; i < format->attribute_count; ++i) {
-                printf("Loc: %d, form: %d\n", format->attributes[i].location, format->attributes[i].format);
+                //printf("Loc: %d, form: %d\n", format->attributes[i].location, format->attributes[i].format);
                 attributes[i] = (VkVertexInputAttributeDescription) {
                         .location = format->attributes[i].location,
                         .binding = 0,
@@ -422,7 +425,7 @@ SGE_RESULT sge_vulkan_pipeline_create_specific_format(
                 .alphaToOneEnable = VK_FALSE,
         };
 
-        printf("IS 3D: %d\n", settings->is_3d == VK_TRUE ? 1 : 0);
+        //printf("IS 3D: %d\n", settings->is_3d == VK_TRUE ? 1 : 0);
         VkPipelineDepthStencilStateCreateInfo depth_stencil_state_create_info = {
                  .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
                  .pNext = NULL,
@@ -485,7 +488,7 @@ SGE_RESULT sge_vulkan_pipeline_create_specific_format(
 
         VkDescriptorSetLayout descriptor_set_layout = NULL;
         if (vkCreateDescriptorSetLayout(vk_context->device, &descriptor_layout_create_info, vk_context->sge_allocator, &descriptor_set_layout) != VK_SUCCESS) {
-                log_event(LOG_LEVEL_ERROR, "failed to create descriptor set layout for format pipeline");
+                log_internal_event(LOG_LEVEL_ERROR, "failed to create descriptor set layout for format pipeline");
                 return SGE_ERROR;
         }
 
@@ -500,7 +503,7 @@ SGE_RESULT sge_vulkan_pipeline_create_specific_format(
         };
 
         if (vkCreatePipelineLayout(vk_context->device, &pipeline_layout_create_info, vk_context->sge_allocator, create_pipeline_layout) != VK_SUCCESS) {
-                log_event(LOG_LEVEL_ERROR, "failed to create pipeline layout for format pipeline");
+                log_internal_event(LOG_LEVEL_ERROR, "failed to create pipeline layout for format pipeline");
                 return SGE_ERROR;
         }
 
@@ -540,7 +543,7 @@ SGE_RESULT sge_vulkan_pipeline_create_specific_format(
         };
 
         if (vkCreateGraphicsPipelines(vk_context->device, VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, vk_context->sge_allocator, create_pipeline) != VK_SUCCESS) {
-                log_event(LOG_LEVEL_ERROR, "failed to create graphics pipeline");
+                log_internal_event(LOG_LEVEL_ERROR, "failed to create graphics pipeline");
                 return SGE_ERROR;
         }
 
@@ -551,7 +554,7 @@ SGE_RESULT sge_vulkan_pipeline_create_specific_format(
 sge_vulkan_pipeline_settings *transform_pipeline_settings_to_vulkan_specific(sge_pipeline_settings *settings) {
         sge_vulkan_pipeline_settings *vulkan_pipeline_settings = allocate_memory(sizeof(sge_vulkan_pipeline_settings), MEMORY_TAG_RENDERER);
 
-        log_event(LOG_LEVEL_INFO, "Transforming pipeline settings to vulkan specifics");
+        log_internal_event(LOG_LEVEL_INFO, "Transforming pipeline settings to vulkan specifics");
 
         if (vulkan_pipeline_settings == NULL) {
                 allocation_error();
@@ -638,6 +641,6 @@ sge_vulkan_pipeline_settings *transform_pipeline_settings_to_vulkan_specific(sge
 
 
 
-        log_event(LOG_LEVEL_INFO, "Finished Transforming pipeline settings to vulkan specifics");
+        log_internal_event(LOG_LEVEL_INFO, "Finished Transforming pipeline settings to vulkan specifics");
         return vulkan_pipeline_settings;
 }
