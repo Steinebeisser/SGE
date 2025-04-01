@@ -40,7 +40,6 @@ static size_t total_memory_usage = 0;
 uint32_t amount_allocations = 0;
 uint32_t amount_freeing = 0;
 
-const char *memory_tag_to_string(memory_tag tag);
 int amount_chars_in_int(int number);
 void *get_next_allocation_memory_tag_usage(const void *node);
 
@@ -126,18 +125,7 @@ void *allocate_memory(const size_t size, const memory_tag tag) {
         return ptr;
 }
 
-const char *memory_tag_to_string(const memory_tag tag) {
-        switch (tag) {
-                case MEMORY_TAG_UNKNOWN: return "UNKNOWN";
-                case MEMORY_TAG_LOGGER: return "LOGGER";
-                case MEMORY_TAG_INPUT: return "INPUT";
-                case MEMORY_TAG_VULKAN: return "VULKAN";
-                case MEMORY_TAG_TEST_1: return "Test 1";
-                case MEMORY_TAG_TEST_2: return "TEst 2";
-                case MEMORY_TAG_TEST_3: return "TITATEST 3";
-                default: return "INVALID_TAG";
-        }
-}
+
 
 void free_memory(void *ptr,const memory_tag tag) {
         if (!ptr) {
@@ -304,8 +292,11 @@ void print_memory_usage_str() {
         "--------------------------------------------------\n"
              "|              Current Memory Usage              |\n"
              "--------------------------------------------------\n"
-             "| Total Usage | %d %-*s |\n"
-             "--------------------------------------------------\n", total_memory_usage, 48-13-5-amount_chars_in_int(total_memory_usage), "Bytes");
+             "| Total Usage   | %d %-*s |\n"
+             "--------------------------------------------------\n", total_memory_usage, 48-15-5-amount_chars_in_int(total_memory_usage), "Bytes");
+        snprintf(memory_usage_str + strlen(memory_usage_str), sizeof(memory_usage_str),
+                "| Tracker Usage | %d %-*s |\n"
+                "--------------------------------------------------\n", tracker_memory_usage, 48-15-5-amount_chars_in_int(tracker_memory_usage), "Bytes");
 
         copy_memory_tag_usage_tracker = memory_tag_usage_tracker; // todo actually copy/duplicate linked list
         copy_memory_tag_usage_tracker =
