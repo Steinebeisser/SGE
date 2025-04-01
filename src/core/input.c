@@ -14,22 +14,26 @@ int *key_states = NULL;
 int *last_key_states = NULL;
 int *mouse_states = NULL;
 int *last_mouse_states = NULL;
-bool is_tracking_enabled = false;
+SGE_BOOL is_tracking_enabled = SGE_FALSE;
 mouse_pos last_mouse_pos = {0, 0};
 mouse_pos delta_mouse_pos = {0,0};
 
-void enable_input_tracking() {
-        is_tracking_enabled = true;
+SGE_RESULT enable_input_tracking() {
+        is_tracking_enabled = SGE_TRUE;
         key_states = allocate_memory(256 * sizeof(int), MEMORY_TAG_INPUT);
         last_key_states = allocate_memory(256 * sizeof(int), MEMORY_TAG_INPUT);
         if (key_states == NULL || last_key_states == NULL) {
                 log_internal_event(LOG_LEVEL_FATAL, "Failed to init Key states");
+                return SGE_ERROR_FAILED_ALLOCATION      ;
         }
         mouse_states = allocate_memory(16 * sizeof(int), MEMORY_TAG_INPUT);
         last_mouse_states = allocate_memory(16 * sizeof(int), MEMORY_TAG_INPUT);
         if (mouse_states == NULL || last_mouse_states == NULL) {
                 log_internal_event(LOG_LEVEL_FATAL, "Failed to init Mouse states");
+                return SGE_ERROR_FAILED_ALLOCATION;
         }
+
+        return SGE_SUCCESS;
 }
 
 
@@ -45,72 +49,61 @@ mouse_pos get_delta_mouse_position() {
         return delta_mouse_pos;
 }
 
-int is_key_down(const keys key) {
+SGE_BOOL is_key_down(const keys key) {
         if (!is_tracking_enabled) {
-                return 0;
+                return SGE_FALSE;
         }
         //printf("CHECKING KEY: %d", key);
         return key_states[key];
 }
 
-int is_key_pressed(const keys key) {
+SGE_BOOL is_key_pressed(const keys key) {
         if (!is_tracking_enabled) {
-                return 0;
+                return SGE_FALSE;
         }
         if (last_key_states[key]) {
-                //printf("LAST KEY STATE: %d", last_key_states[key]);
-                //printf("ALREADY PRESSED\n");
-                return 0;
+                //prSGE_BOOLf("LAST KEY STATE: %d", last_key_states[key]);
+                //prSGE_BOOLf("ALREADY PRESSED\n");
+                return SGE_FALSE;
         }
         if (key_states[key]) {
-                return 1;
+                return SGE_TRUE;
         }
-        return 0;
+        return SGE_FALSE;
 }
 
-int is_mouse_down(mouse_buttons button) {
+SGE_BOOL is_mouse_down(mouse_buttons button) {
         if (!is_tracking_enabled) {
-                return 0;
+                return SGE_FALSE;
         }
-        //printf("CHECKING KEY: %d", key);
+        //prSGE_BOOLf("CHECKING KEY: %d", key);
         return mouse_states[button];
 }
 
-int was_mouse_down(mouse_buttons button) {
+SGE_BOOL was_mouse_down(mouse_buttons button) {
         if (!is_tracking_enabled) {
-                return 0;
+                return SGE_FALSE;
         }
 
         if (!mouse_states[button]) {
                 return last_mouse_states[button];
         }
 
-        return 0;
+        return SGE_FALSE;
 }
-int is_mouse_pressed(mouse_buttons button) {
+SGE_BOOL is_mouse_pressed(mouse_buttons button) {
         if (!is_tracking_enabled) {
-                return 0;
+                return SGE_FALSE;
         }
         if (last_mouse_states[button]) {
-                //printf("LAST KEY STATE: %d", last_key_states[key]);
-                //printf("ALREADY PRESSED\n");
-                return 0;
+                //prSGE_BOOLf("LAST KEY STATE: %d", last_key_states[key]);
+                //prSGE_BOOLf("ALREADY PRESSED\n");
+                return SGE_FALSE;
         }
         if (mouse_states[button]) {
-                return 1;
+                return SGE_TRUE;
         }
-        return 0;
-}
-
-int is_shift_active() {
-        if (is_key_down(KEY_LSHIFT) || is_key_down(KEY_RSHIFT) && !is_key_down(KEY_CAPSLOCK)) {
-                return 1;
-        }
-
-        if (is_key_down(KEY_CAPSLOCK) && !is_key_down(KEY_LSHIFT) && !is_key_down(KEY_RSHIFT)) {
-                return 1;
-        }
-        return 0;
+        return SGE_FALSE;
 }
 
 void update_key_states() {

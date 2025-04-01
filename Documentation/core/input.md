@@ -1,21 +1,41 @@
-//
-// Created by Geisthardt on 03.03.2025.
-//
+# SGE Input Tracking
 
-#ifndef INPUT_H
-#define INPUT_H
+## Overview
 
-#include "renderer/sge_render.h"
+The Input tracking, if enabled, tracks mouse and keyboard clicks/movement needed for handling movement
 
-typedef struct sge_render sge_render;
+## Structures
 
-extern int *key_states;
-extern int *last_key_states;
-extern int *mouse_states;
-extern int *last_mouse_states;
-extern struct mouse_pos last_mouse_pos;
-extern struct mouse_pos delta_mouse_pos;
+```c
+typedef struct mouse_pos {
+        int x;
+        int y;
+} mouse_pos;
+```
 
+---
+
+## Global Variables
+These global variables store the current and previous states of keyboard and mouse inputs. They are updated in the OS window implementation (update_frame(target_fps, start_time, window);).
+
+To initialize the int arrays call `enable_input_tracking`
+
+```c
+int *key_states = NULL;
+int *last_key_states = NULL;
+int *mouse_states = NULL;
+int *last_mouse_states = NULL;
+SGE_BOOL is_tracking_enabled = SGE_FALSE;
+mouse_pos last_mouse_pos = {0, 0};
+mouse_pos delta_mouse_pos = {0, 0};
+```
+
+---
+
+## Keys
+
+### Disclaimer: "AI generated probably not correctly, will be fixed as soon as i test every key, for example didnt have win shift/control"
+```c 
 typedef enum keys {
         // Control characters (0x00-0x1F)
         KEY_NULL                = 0x00,   // Null character
@@ -153,35 +173,124 @@ typedef enum keys {
         KEY_NUMPAD_DEC          = 0x6E,   // .
         KEY_NUMPAD_DIV          = 0x6F,   // /
 } keys;
+```
 
+---
+
+## Mouse Buttons
+
+#### more will be added sometime
+```
 typedef enum mouse_buttons {
         MBUTTON_LEFT            = 0x01,
         MBUTTON_RIGHT           = 0x02,
         MBUTTON_MIDDLE          = 0x04
 } mouse_buttons;
+```
 
+---
 
-typedef struct mouse_pos {
-        int x;
-        int y;
-} mouse_pos;
+## API Reference
 
-//void on_button_press(keys key, event event);
+### `SGE_RESULT enable_input_tracking`
+Enables Input tracking and initializes an array for each Key/Mouse Button
 
-SGE_BOOL is_key_down(keys key); // returns 1 if pressed
-SGE_BOOL is_key_pressed(keys key); //returns 1 only if it changed from not pressed to pressed
+### Returns:
+- `SGE_ERROR_ALLOCATION_FAILED`: If memory allocation fails.
+- `SGE_SUCCESS`: If initialization succeeds.
 
-SGE_BOOL is_mouse_down(mouse_buttons button);
-SGE_BOOL was_mouse_down(mouse_buttons button);
-SGE_BOOL is_mouse_pressed(mouse_buttons button);
+--- 
 
-void update_key_states();
+### `SGE_BOOL is_key_down(keys key)`
 
-mouse_pos get_mouse_position();
-mouse_pos get_window_mouse_pos(sge_render *render, mouse_pos screen_pos);
-mouse_pos get_delta_mouse_position();
+#### Parameters:
+- `key`: Key from `keys` enum
 
-SGE_RESULT enable_input_tracking();
+#### Returns:
+- `SGE_TRUE`: if the key is pressed down, each frame counts
+- `SGE_FALSE`: if the key is not pressed
+- `SGE_FALSE`: if `SGE_BOOL is_tracking_enabled == SGE_FALSE`  
 
+--- 
 
-#endif //INPUT_H
+### `SGE_BOOL is_key_pressed(keys key);`
+
+#### Parameters:
+- `key`: Key from `keys` enum
+
+#### Returns:
+- `SGE_TRUE`: on key change from unpressed to pressed, only once not every frame
+- `SGE_FALSE`: if the key is not pressed or being held down after the first frame
+- `SGE_FALSE`: if `SGE_BOOL is_tracking_enabled == SGE_FALSE`
+
+---
+
+### `SGE_BOOL is_mouse_down(mouse_buttons button);`
+
+#### Parameters:
+- `button`: Button from `mouse_buttons` enum
+
+#### Returns:
+- `SGE_TRUE`: if the key is pressed down, each frame counts
+- `SGE_FALSE`: if the key is not pressed
+- `SGE_FALSE`: if `SGE_BOOL is_tracking_enabled == SGE_FALSE`
+
+---
+
+### `SGE_BOOL is_mouse_pressed(mouse_buttons button);`
+
+#### Parameters:
+- `button`: Button from `mouse_buttons` enum
+
+#### Returns:
+- `SGE_TRUE`: on key change from unpressed to pressed, only once not every frame
+- `SGE_FALSE`: if the key is not pressed or being held down after the first frame
+- `SGE_FALSE`: if `SGE_BOOL is_tracking_enabled == SGE_FALSE`
+
+---
+
+### `SGE_BOOL was_mouse_down(mouse_buttons buttons);`
+
+#### Parameters:
+- `button`: Button from `mouse_buttons` enum
+
+#### Returns:
+- `SGE_TRUE`: if the mouse was down in the last frame
+- `SGE_FALSE`: if the mouse was not down in the last frame
+- `SGE_FALSE`: if `SGE_BOOL is_tracking_enabled == SGE_FALSE`
+
+---
+
+### `mouse_pos get_mouse_position();`
+
+#### Returns:
+- `last_mouse_pos`: which is `{0, 0}` and does not update unless input tracking is enabled
+
+---
+
+### `mouse_pos get_window_mouse_pos(sge_render *render, mouse_pos screen_pos);`
+
+Gets the mouse position on the window, calls the OS for this
+
+Useful for checking if mouse is inside a window region
+
+#### Parameters:
+- `*render`: Pointer to the `sge_render` struct which holds the Pointer to the `sge_window` struct
+- `screen_pos`: `mouse_pos` struct with screen values, e.g. `get_mouse_position();`
+
+#### Returns:
+- `{-1000, -1000}`: if the mouse is outside the window
+- x and y coordinates where the mouse is on the window
+ 
+---
+
+### `mouse_pos get_delta_mouse_position();`
+
+#### Returns:
+- `mouse_pos` struct: { x_pos - last_mouse_pos.x, y_pos - last_mouse_pos.y }
+
+---
+
+### `void update_key_states();`
+
+Copies current Key states to last key states, used in os window implementation
