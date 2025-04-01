@@ -30,7 +30,7 @@ bool has_changed = false;
 bool ignore_next_mousemove = true;
 mouse_pos last_visible_pos = {0,0};
 
-extern bool is_tracking_enabled;
+extern SGE_BOOL is_tracking_enabled;
 
 
 mouse_pos get_window_center(HWND hwnd) {
@@ -65,10 +65,71 @@ mouse_pos screen_to_window(sge_render *render, mouse_pos screen_pos) {
                 .y = screen_point.y
         };
 
-        return window_pos;
+        if (window_pos.x >= 0 && window_pos.x < render->window->width &&
+                window_pos.y >= 0 && window_pos.y < render->window->height) {
+                return window_pos;
+        } else {
+                window_pos.x = -1000;
+                window_pos.y = -1000;
+                return window_pos;
+        }
 }
 
+BOOL CALLBACK MonitorEnumProc(
+        HMONITOR hMonitor,
+        HDC hdcMonitor,
+        LPRECT lprcMonitor,
+        LPARAM dwData
+) {
+        sge_screens_data *data = (sge_screens_data*)dwData;
 
+        MONITORINFOEX monitorInfo;
+        monitorInfo.cbSize = sizeof(MONITORINFOEX);
+
+        if (GetMonitorInfo(hMonitor, (LPMONITORINFO)&monitorInfo)) {
+                int width = monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left;
+                int height = monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top;
+
+                sge_screen_data *new_screens = realloc(data->screens, (data->num_screens + 1) * sizeof(sge_screen_data));
+                if (new_screens == NULL) {
+                    return FALSE;
+                }
+                data->screens = new_screens;
+
+                sge_screen_data *new_screen = &data->screens[data->num_screens];
+                new_screen->is_primary = (monitorInfo.dwFlags & MONITORINFOF_PRIMARY) != 0;
+                new_screen->width = width;
+                new_screen->height = height;
+
+                DISPLAY_DEVICE dd;
+                dd.cb = sizeof(DISPLAY_DEVICE);
+                if (EnumDisplayDevices(monitorInfo.szDevice, 0, &dd, 0)) {
+                        strncpy(new_screen->name, dd.DeviceString, 63);
+                        new_screen->name[63] = '\0';
+                } else {
+                        strncpy(new_screen->name, monitorInfo.szDevice, 63);
+                        new_screen->name[63] = '\0';
+                }
+
+                data->num_screens++;
+        }
+
+        return TRUE;
+}
+
+sge_screens_data *get_screens_data() {
+        sge_screens_data *screens_data = allocate_memory(sizeof(sge_screens_data), MEMORY_TAG_WINDOW);
+        if (screens_data == NULL) {
+                return NULL;
+        }
+
+        screens_data->screens = NULL;
+        screens_data->num_screens = 0;
+
+        EnumDisplayMonitors(NULL, NULL, MonitorEnumProc, (LPARAM)screens_data);
+
+        return screens_data;
+}
 
 void set_window_title(HWND hwnd, char *title, ...) {
         if (!hwnd) {
@@ -102,7 +163,7 @@ LRESULT CALLBACK wndProc(const HWND hwnd, const UINT uMsg, const WPARAM wparam, 
                         if (!is_tracking_enabled) {
                                 break;
                         }
-                        key_states[wparam] = 1;
+                        key_states[wparam] = SGE_TRUE;
                 } break;
                 case WM_KEYUP: {
                         //printf("KEY UP: %llu\n", wparam);
@@ -110,7 +171,7 @@ LRESULT CALLBACK wndProc(const HWND hwnd, const UINT uMsg, const WPARAM wparam, 
                         if (!is_tracking_enabled) {
                                 break;
                         }
-                        key_states[wparam] = 0;
+                        key_states[wparam] = SGE_FALSE;
                 } break;
                 case WM_MOUSEMOVE: {
                         if (!is_tracking_enabled) {
@@ -161,13 +222,13 @@ LRESULT CALLBACK wndProc(const HWND hwnd, const UINT uMsg, const WPARAM wparam, 
                                 break;
                         }
                         printf("PRESSED L MOUSEBUTTON\n");
-                        mouse_states[MBUTTON_LEFT] = 1;
+                        mouse_states[MBUTTON_LEFT] = SGE_TRUE;
                 } break;
                 case WM_LBUTTONUP: {
                         if (!is_tracking_enabled) {
                                 break;
                         }
-                        mouse_states[MBUTTON_LEFT] = 0;
+                        mouse_states[MBUTTON_LEFT] = SGE_FALSE;
                 } break;
                 case WM_LBUTTONDBLCLK: {
                         if (!is_tracking_enabled) {
@@ -181,27 +242,27 @@ LRESULT CALLBACK wndProc(const HWND hwnd, const UINT uMsg, const WPARAM wparam, 
                                 break;
                         }
                         printf("RIGHT CLICK: %llu\n", wparam);
-                        mouse_states[MBUTTON_RIGHT] = 1;
+                        mouse_states[MBUTTON_RIGHT] = SGE_TRUE;
                 } break;
                 case WM_RBUTTONUP: {
                         if (!is_tracking_enabled) {
                                 break;
                         }
                         printf("RIGHT CLICK UP: %llu\n", wparam);
-                        mouse_states[MBUTTON_RIGHT] = 0;
+                        mouse_states[MBUTTON_RIGHT] = SGE_FALSE;
                 } break;
 
                 case WM_MBUTTONDOWN: {
                         if (!is_tracking_enabled) {
                                 break;
                         }
-                        mouse_states[MBUTTON_MIDDLE] = 1;
+                        mouse_states[MBUTTON_MIDDLE] = SGE_TRUE;
                 } break;
                 case WM_MBUTTONUP: {
                         if (!is_tracking_enabled) {
                                 break;
                         }
-                        mouse_states[MBUTTON_MIDDLE] = 0;
+                        mouse_states[MBUTTON_MIDDLE] = SGE_FALSE;
                 } break;
 
                 case WM_XBUTTONDOWN: { //todo side buttons
