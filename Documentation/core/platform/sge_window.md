@@ -202,7 +202,7 @@ Shows the Mouse again in the last visible position before it was being hidden
 
 ### Examples
 
-#### Scan Screens and copy the last non primary screen into `secondary_screen`
+**Scan Screens and copy the last non-primary screen into `secondary_screen`**
 ```c
 sge_screens_data *screen_data = get_screens_data();
 sge_screen_data *secondary_screen = allocate_memory(sizeof(sge_screen_data), MEMORY_TAG_WINDOW);
@@ -214,7 +214,7 @@ for (int i = 0; i < screen_data->num_screens; ++i) {
 }
 ```
 
-#### Create a Window in Borderless Mode with Size 700x500 that's resizable
+**Create a Window in Borderless Mode with Size 700x500 that's resizable**
 ```c
 sge_window_create_settings window_create_settings = {
         .window_mode = SGE_WINDOW_MODE_BORDERLESS,
@@ -225,7 +225,7 @@ sge_window_create_settings window_create_settings = {
 sge_window *window= sge_window_create("Test Window", &window_create_settings);
 ```
 
-#### Terminate if no secondary screen else update window to be borderless fullscreen on the secondary Monitor, Width Height x and y will be ignored because its Fullscreen, its also not resizeable
+**Terminate if no secondary screen else update window to be borderless fullscreen on the secondary Monitor, Width Height x and y will be ignored because its Fullscreen, its also not resizeable**
 ```c
 if (!secondary_screen) {
         terminate_program();
@@ -242,7 +242,9 @@ sge_window_create_settings win_update_settings = {
 sge_window_mode_update(window, &win_update_settings);
 ```
 
-#### Is Running while not pressing Left Mouse Button, if Right Mouse Button is pressed down it hides the mouse and centers in window screen, if it was down last frame(not pressed anymore) shows it in its original position<br> If not running anymore destroying Window
+**Is Running while not pressing Left Mouse Button, if Right Mouse Button is pressed down it hides the mouse and 
+centers in window screen, if it was down last frame(not pressed anymore) shows it in its original position<br> 
+If not running anymore destroying Window**
 ```c
 SGE_BOOL is_running = SGE_TRUE;
 while (is_running) {
