@@ -278,17 +278,14 @@ LRESULT CALLBACK wndProc(const HWND hwnd, const UINT uMsg, const WPARAM wparam, 
 
 
                         if (!window) {
-                                printf("THE STARTS FDONT ALIGN TODAY");
                                 break;
                         }
 
                         if (!window->is_resizable) {
-                                printf("THE STARTS FDONT ALIGN TODAY");
                                 break;
                         }
 
                          if (window->current_window_mode != SGE_WINDOW_MODE_BORDERLESS) {
-                                printf("THE STARTS FDONT ALIGN TODAY");
                                 break;
                          }
 
@@ -352,14 +349,12 @@ LRESULT CALLBACK wndProc(const HWND hwnd, const UINT uMsg, const WPARAM wparam, 
                         if (GetWindowRect(hwnd, &rect)) {
                                 x = rect.left;
                                 y = rect.top;
-                                printf("Window position - X: %d, Y: %d\n", x, y);
                         }
 
                         window->x = x;
                         window->y = y;
                 } break;
                 case WM_SETCURSOR: {
-                        printf("SETTING CURSO\n");
 
                         POINT pt;
                         GetCursorPos(&pt);
