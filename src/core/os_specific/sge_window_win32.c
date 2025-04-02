@@ -100,6 +100,10 @@ BOOL CALLBACK MonitorEnumProc(
                 new_screen->is_primary = (monitorInfo.dwFlags & MONITORINFOF_PRIMARY) != 0;
                 new_screen->width = width;
                 new_screen->height = height;
+                new_screen->bottom = monitorInfo.rcMonitor.bottom;
+                new_screen->top = monitorInfo.rcMonitor.top;
+                new_screen->left = monitorInfo.rcMonitor.left;
+                new_screen->right = monitorInfo.rcMonitor.right;
 
                 DISPLAY_DEVICE dd;
                 dd.cb = sizeof(DISPLAY_DEVICE);
@@ -146,6 +150,8 @@ void set_window_title(HWND hwnd, char *title, ...) {
 }
 
 LRESULT CALLBACK wndProc(const HWND hwnd, const UINT uMsg, const WPARAM wparam, const LPARAM lparam) {
+        sge_window *window = (sge_window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+        int border_size = 3;
         switch (uMsg) { https://learn.microsoft.com/de-de/windows/win32/winmsg
                 case WM_CLOSE:
                         is_window_open = 0;
@@ -221,7 +227,6 @@ LRESULT CALLBACK wndProc(const HWND hwnd, const UINT uMsg, const WPARAM wparam, 
                         if (!is_tracking_enabled) {
                                 break;
                         }
-                        printf("PRESSED L MOUSEBUTTON\n");
                         mouse_states[MBUTTON_LEFT] = SGE_TRUE;
                 } break;
                 case WM_LBUTTONUP: {
@@ -234,21 +239,18 @@ LRESULT CALLBACK wndProc(const HWND hwnd, const UINT uMsg, const WPARAM wparam, 
                         if (!is_tracking_enabled) {
                                 break;
                         }
-                        printf("DOUBLE CLICK WITH MOUSE\n");
                 } break;
 
                 case WM_RBUTTONDOWN: {
                         if (!is_tracking_enabled) {
                                 break;
                         }
-                        printf("RIGHT CLICK: %llu\n", wparam);
                         mouse_states[MBUTTON_RIGHT] = SGE_TRUE;
                 } break;
                 case WM_RBUTTONUP: {
                         if (!is_tracking_enabled) {
                                 break;
                         }
-                        printf("RIGHT CLICK UP: %llu\n", wparam);
                         mouse_states[MBUTTON_RIGHT] = SGE_FALSE;
                 } break;
 
@@ -272,6 +274,64 @@ LRESULT CALLBACK wndProc(const HWND hwnd, const UINT uMsg, const WPARAM wparam, 
 
                 } break;
 
+                case WM_NCHITTEST: {
+
+
+                        if (!window) {
+                                printf("THE STARTS FDONT ALIGN TODAY");
+                                break;
+                        }
+
+                        if (!window->is_resizable) {
+                                printf("THE STARTS FDONT ALIGN TODAY");
+                                break;
+                        }
+
+                         if (window->current_window_mode != SGE_WINDOW_MODE_BORDERLESS) {
+                                printf("THE STARTS FDONT ALIGN TODAY");
+                                break;
+                         }
+
+
+                        int x_pos = GET_X_LPARAM(lparam);
+                        int y_pos = GET_Y_LPARAM(lparam);
+
+                        //TOP
+                        if (y_pos <= window->usage_screen->top + window->y + border_size) {
+                                if (x_pos <= window->usage_screen->left + window->x + border_size) {
+                                        return HTTOPLEFT;
+                                }
+                                if (x_pos >= window->usage_screen->left + window->x + window->width - border_size) {
+                                        return HTTOPRIGHT;
+                                }
+                                return HTTOP;
+                        }
+
+                        //BOTTOM
+                        if (y_pos >= window->usage_screen->top + window->y + window->height - border_size) {
+                                if (x_pos <= window->usage_screen->left + window->x + border_size) {
+                                        return HTBOTTOMLEFT;
+                                }
+                                if (x_pos >= window->usage_screen->left + window->x + window->width - border_size) {
+                                        return HTBOTTOMRIGHT;
+                                }
+                                return HTBOTTOM;
+                        }
+
+                        //LEFT
+                        if (x_pos <= window->usage_screen->left + window->x + border_size) {
+                                return HTLEFT;
+                        }
+
+                        //RIGHT
+                        if (x_pos >= window->usage_screen->left + window->x + window->width - border_size) {
+                                return HTRIGHT;
+                        }
+
+
+                        return HTCLIENT;
+                }
+
 
                 case WM_SIZE: {
                         //printf("RESIZE HAPPENED\n");
@@ -282,21 +342,72 @@ LRESULT CALLBACK wndProc(const HWND hwnd, const UINT uMsg, const WPARAM wparam, 
 
                         //printf("width: %d, height: %d\n", width, height);
                         is_resize = true;
+                        if (!window) {
+                                break;
+                        }
+                        int x = 0;
+                        int y = 0;
+
+                        RECT rect;
+                        if (GetWindowRect(hwnd, &rect)) {
+                                x = rect.left;
+                                y = rect.top;
+                                printf("Window position - X: %d, Y: %d\n", x, y);
+                        }
+
+                        window->x = x;
+                        window->y = y;
                 } break;
                 case WM_SETCURSOR: {
-                        //printf("SETTING CURSO\n");
+                        printf("SETTING CURSO\n");
+
+                        POINT pt;
+                        GetCursorPos(&pt);
+                        int x_pos = pt.x;
+                        int y_pos = pt.y;
+
+                        if (y_pos <= window->usage_screen->top + window->y + border_size) {
+                                break;
+                        }
+
+                        if (y_pos >= window->usage_screen->top + window->y + window->height - border_size) {
+                                break;
+                        }
+
+                        if (x_pos <= window->usage_screen->left + window->x + border_size) {
+                                break;
+                        }
+
+                        if (x_pos >= window->usage_screen->left + window->x + window->width - border_size) {
+                                break;
+                        }
+
+                        SetCursor(LoadCursor(NULL, IDC_ARROW));
+                        return 0;
                 } break;
         }
         //printf("UMSG: %d\n", uMsg);
         return DefWindowProc(hwnd, uMsg, wparam, lparam);
 }
 
-sge_window *sge_window_create(const int width, const int height, const char *window_name) {
+sge_window *sge_window_create(const char *window_name, sge_window_create_settings *settings) {
         const HINSTANCE hInstance = GetModuleHandleA(NULL);
 
         const char CLASS_NAME[] = "Sample Window Class";
+        if (!settings || !settings->width ||!settings->height) {
+                log_internal_event(LOG_LEVEL_ERROR, "Wanted to create window without passing settings or widht/height");
+                return NULL;
+        }
+
+        int width = settings->width;
+        int height = settings->height;
 
         WNDCLASS wc = { };
+
+        sge_screen_data *window_screen = allocate_memory(sizeof(sge_screen_data), MEMORY_TAG_WINDOW);
+        if (settings->screen != NULL) {
+                copy_memory(window_screen, settings->screen, sizeof(sge_screen_data), 0, 0);
+        }
 
         wc.lpfnWndProc = wndProc;
         wc.hInstance = hInstance;
@@ -309,13 +420,94 @@ sge_window *sge_window_create(const int width, const int height, const char *win
                 log_internal_event(LOG_LEVEL_FATAL, error_message);
         }
 
+        int x = CW_USEDEFAULT;
+        int y = CW_USEDEFAULT;
+
+        DWORD dxExStyle = 0; //default
+        DWORD dwStyle = WS_OVERLAPPEDWINDOW; //default
+
+
+        SGE_BOOL found_monitor = SGE_FALSE;
+
+        if (window_screen->width > 0 && window_screen->height > 0) {
+                x = window_screen->left + settings->x;
+                y = window_screen->top + settings->y;
+                found_monitor = SGE_TRUE;
+        }
+
+        if (!found_monitor) {
+                sge_screens_data *screens_data = get_screens_data();
+                if (screens_data && screens_data->screens && screens_data->num_screens > 0) {
+                        for (int i = 0; i < screens_data->num_screens; ++i) {
+                                if (screens_data->screens[i].is_primary) {
+                                        copy_memory(window_screen, &screens_data->screens[i], sizeof(sge_screen_data), 0, 0);
+
+                                        log_internal_event(LOG_LEVEL_INFO, "Chose Primary Monitor as display: Width: %d, Height: %d", width, height);
+                                        found_monitor = SGE_TRUE;
+                                        break;
+                                }
+                        }
+                        if (!found_monitor) {
+                                copy_memory(window_screen, &screens_data->screens[0], sizeof(sge_screen_data), 0, 0);
+                                width = window_screen->width;
+                                height = window_screen->height;
+                                log_internal_event(LOG_LEVEL_INFO, "Failed to find Primary Monitor choosing the first one with dimensions: Width: %d, Height: %d", width, height);
+                        }
+                }
+        }
+
+        if (settings->window_mode) {
+                switch (settings->window_mode) {
+                        case SGE_WINDOW_MODE_WINDOWED: {
+                                if (settings->is_resizable) {
+                                        dwStyle = WS_OVERLAPPEDWINDOW;
+                                } else {
+                                        dwStyle = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+                                }
+                        } break;
+                        case SGE_WINDOW_MODE_BORDERLESS: {
+                                dwStyle = WS_POPUP;
+                        } break;
+                        case SGE_WINDOW_MODE_BORDERLESS_FULLSCREEN: {
+                                dwStyle = WS_POPUP;
+                                if (window_screen->width > 0 && window_screen->height > 0) {
+                                        width = window_screen->width;
+                                        height = window_screen->height;
+                                } else {
+                                        log_internal_event(LOG_LEVEL_FATAL, "no sreens data present");
+                                        return NULL;
+                                }
+                        } break;
+                        case SGE_WINDOW_MODE_TRUE_FULLSCREEN: {
+                                // todo Needs more stuff for true fullscreen
+                                dwStyle = WS_POPUP;
+
+
+                        } break;
+                        case SGE_WINDOW_MODE_WINDOWED_FULLSCREEN: {
+                                dwStyle = WS_OVERLAPPEDWINDOW;
+                                if (window_screen->width > 0 && window_screen->height > 0) {
+                                        width = window_screen->width;
+                                        height = window_screen->height;
+                                } else {
+                                        log_internal_event(LOG_LEVEL_FATAL, "no sreens data present");
+                                        return NULL;
+                                }
+                        } break;
+                }
+        } else if (settings->is_resizable) {
+                dwStyle = WS_OVERLAPPEDWINDOW;
+        } else {
+                dwStyle = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+        }
+
         const HWND hwnd = CreateWindowEx(
-                0,
+                dxExStyle,
                 CLASS_NAME,
                 window_name,
-                WS_OVERLAPPEDWINDOW, //https://learn.microsoft.com/en-us/windows/win32/winmsg/window-styles
-                CW_USEDEFAULT,
-                CW_USEDEFAULT,
+                dwStyle, //https://learn.microsoft.com/en-us/windows/win32/winmsg/window-styles
+                x,
+                y,
                 width,
                 height,
                 NULL,
@@ -333,7 +525,20 @@ sge_window *sge_window_create(const int width, const int height, const char *win
         }
 
         //https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-showwindow?redirectedfrom=MSDN
-        ShowWindow(hwnd, SW_SHOWDEFAULT);
+        if (settings->window_mode) {
+                if (settings->window_mode == SGE_WINDOW_MODE_WINDOWED_FULLSCREEN) {
+                        log_internal_event(LOG_LEVEL_INFO, "Showing maximized");
+                        ShowWindow(hwnd,SW_SHOWMAXIMIZED);
+                } else {
+                        ShowWindow(hwnd, SW_SHOWDEFAULT);
+
+                }
+        } else {
+                ShowWindow(hwnd, SW_SHOWDEFAULT);
+        }
+
+
+
         log_internal_event(LOG_LEVEL_INFO, "Created Window");
         is_window_open = 1;
 
@@ -341,6 +546,13 @@ sge_window *sge_window_create(const int width, const int height, const char *win
                 .hwnd = hwnd,
                 .hinstance = hInstance
         };
+
+        RECT rect;
+        if (GetWindowRect(hwnd, &rect)) {
+                x = rect.left;
+                y = rect.top;
+                printf("Window position - X: %d, Y: %d\n", x, y);
+        }
 
         sge_window *window = allocate_memory(sizeof(sge_window), MEMORY_TAG_WINDOW);
         if (window == NULL) {
@@ -350,12 +562,25 @@ sge_window *sge_window_create(const int width, const int height, const char *win
         window->handle = handle;
         window->height = height;
         window->width  = width;
+        window->x      = x;
+        window->y      = y;
+        window->usage_screen = window_screen;
+        window->is_resizable = settings->is_resizable == SGE_TRUE ? SGE_TRUE : SGE_FALSE;
+
+        if (settings->window_mode) {
+                window->current_window_mode = settings->window_mode;
+        } else {
+                window->current_window_mode = SGE_WINDOW_MODE_WINDOWED;
+        }
+
+
+        SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)window);
 
         return window;
 }
 
 SGE_BOOL sge_window_show(sge_window *window) {
-        if (!ShowWindow(window->handle.hwnd, SW_SHOWDEFAULT)) {
+        if (!ShowWindow(window->handle.hwnd, SW_SHOW)) {
                 log_internal_event(LOG_LEVEL_ERROR, "Failed to Show Window");
                 return SGE_FALSE;
         }
@@ -451,15 +676,138 @@ void update_frame(const int target_fps, DWORD frame_start_ms, sge_window *window
         g_delta_time += frame_end_time - frame_start_ms;
 }
 
-bool window_should_close() {
-        if (is_window_open) {
-                return 0;
+SGE_RESULT sge_window_mode_update(sge_window *window, sge_window_create_settings *settings) {
+        if (!settings || !window) {
+                return SGE_INVALID_API_CALL;
         }
-        return 1;
+
+        if (!settings->window_mode) {
+                return SGE_INVALID_API_CALL;
+        }
+
+        DWORD dwStyle = WS_OVERLAPPEDWINDOW;
+        int x = window->x;
+        int y = window->y;
+        int width = window->height;
+        int height = window->height;
+
+        sge_screen_data *window_screen = allocate_memory(sizeof(sge_screen_data), MEMORY_TAG_WINDOW);
+        if (!window_screen) {
+                allocation_error();
+                return SGE_ERROR_FAILED_ALLOCATION;
+        }
+        if (settings->screen != NULL) {
+                copy_memory(window_screen, settings->screen, sizeof(sge_screen_data), 0, 0);
+        }
+
+        if (settings->width) {
+                width = settings->width;
+        }
+        if (settings->height) {
+                height = settings->height;
+        }
+
+        SGE_BOOL found_monitor = SGE_FALSE;
+
+        if (window_screen->width > 0 && window_screen->height > 0) {
+                x = window_screen->left + settings->x;
+                y = window_screen->top + settings->y;
+                found_monitor = SGE_TRUE;
+        }
+
+        if (!found_monitor) {
+                sge_screens_data *screens_data = get_screens_data();
+                if (screens_data && screens_data->screens && screens_data->num_screens > 0) {
+                        for (int i = 0; i < screens_data->num_screens; ++i) {
+                                if (screens_data->screens[i].is_primary) {
+                                        copy_memory(window_screen, &screens_data->screens[i], sizeof(sge_screen_data), 0, 0);
+
+                                        log_internal_event(LOG_LEVEL_INFO, "Chose Primary Monitor as display: Width: %d, Height: %d", width, height);
+                                        found_monitor = SGE_TRUE;
+                                        break;
+                                }
+                        }
+                        if (!found_monitor) {
+                                copy_memory(window_screen, &screens_data->screens[0], sizeof(sge_screen_data), 0, 0);
+                                width = window_screen->width;
+                                height = window_screen->height;
+                                log_internal_event(LOG_LEVEL_INFO, "Failed to find Primary Monitor choosing the first one with dimensions: Width: %d, Height: %d", width, height);
+                        }
+                }
+        }
+
+        switch (settings->window_mode) {
+                case SGE_WINDOW_MODE_WINDOWED: {
+                        dwStyle = WS_OVERLAPPEDWINDOW;
+
+                } break;
+                case SGE_WINDOW_MODE_BORDERLESS: {
+                        dwStyle = WS_POPUP;
+                } break;
+                case SGE_WINDOW_MODE_BORDERLESS_FULLSCREEN: {
+                        dwStyle = WS_POPUP;
+                        if (window_screen->width > 0 && window_screen->height > 0) {
+                                width = window_screen->width;
+                                height = window_screen->height;
+                                x = window_screen->left;
+                                y = window_screen->top;
+                        } else {
+                                log_event(LOG_LEVEL_ERROR, "FAiled to find screend Data");
+                                return SGE_ERROR;
+                        }
+                } break;
+                case SGE_WINDOW_MODE_TRUE_FULLSCREEN: {
+                        // todo Needs more stuff for true fullscreen
+                        dwStyle = WS_POPUP;
+
+
+                } break;
+                case SGE_WINDOW_MODE_WINDOWED_FULLSCREEN: {
+                        dwStyle = WS_OVERLAPPEDWINDOW;
+                        if (window_screen->width > 0 && window_screen->height > 0) {
+                                width = window_screen->width;
+                                height = window_screen->height;
+                                x = window_screen->left;
+                                y = window_screen->top;
+                        } else {
+                                log_internal_event(LOG_LEVEL_FATAL, "no sreens data present");
+                                return SGE_ERROR;
+                        }
+                } break;
+        }
+
+        SetWindowLong(window->handle.hwnd, GWL_STYLE, dwStyle);
+        if (!SetWindowPos(window->handle.hwnd, 0,
+                 x, y, width, height,
+                 SWP_FRAMECHANGED)) {
+                printf("ERROR");
+                return SGE_ERROR;
+        }
+        ShowWindow(window->handle.hwnd, SW_SHOW);
+
+
+        window->current_window_mode = settings->window_mode;
+        window->usage_screen = window_screen;
+
+        return SGE_SUCCESS;
 }
 
-void sge_window_destroy(sge_window *window) {
+SGE_BOOL window_should_close() {
+        if (is_window_open) {
+                return SGE_FALSE;
+        }
+        return SGE_TRUE;
+}
+
+SGE_RESULT sge_window_destroy(sge_window *window) {
+        if (!window) {
+                return SGE_INVALID_API_CALL;
+        }
         printf("DESTROYYYYYY RAWRRRRRRR\n");
+        if (!DestroyWindow(window->handle.hwnd)) {
+                return SGE_ERROR;
+        }
+        return SGE_SUCCESS;
 }
 
 #endif

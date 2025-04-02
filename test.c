@@ -17,19 +17,29 @@ void seg_fault_handler(int sig) {
 int main(void) {
         atexit(terminate_program);
         //signal(SIGSEGV, seg_fault_handler);
-        sge_log_settings log_settings = {0};
+        sge_log_settings log_settings = { .include_internal_logs = SGE_TRUE, .write_instantly = SGE_TRUE, .is_release = SGE_FALSE };
         if (start_logger(log_settings) != 0) {
                 return 1;
         }
         log_event(LOG_LEVEL_INFO, "TEST EVENT: %d", 20);
 
-        //sge_screens_data *screen_data = get_screens_data();
-        //for (int i = 0; i < screen_data->num_screens; ++i) {
-        //        sge_screen_data screen = screen_data->screens[i];
-        //        printf("%sMonitor %s, with resolution: %d:%d\n", screen.is_primary ? "Primary   " : "Secondary ", screen.name, screen.width, screen.height);
-        //}
+        sge_screens_data *screen_data = get_screens_data();
+        sge_screen_data *secondary_screen = allocate_memory(sizeof(sge_screen_data), MEMORY_TAG_WINDOW);
+        for (int i = 0; i < screen_data->num_screens; ++i) {
+                sge_screen_data screen = screen_data->screens[i];
+                printf("%sMonitor %s, with resolution: %d:%d\n", screen.is_primary ? "Primary   " : "Secondary ", screen.name, screen.width, screen.height);
+                if (!screen.is_primary) {
+                        copy_memory(secondary_screen, &screen, sizeof(sge_screen_data), 0, 0);
+                }
+        }
 
-        sge_window *window= sge_window_create(700, 500, "Test Window");
+        sge_window_create_settings window_create_settings = {
+                .window_mode = SGE_WINDOW_MODE_BORDERLESS,
+                .width = 700,
+                .height = 500,
+                .is_resizable = SGE_TRUE
+        };
+        sge_window *window= sge_window_create("Test Window", &window_create_settings);
         sge_render *render = sge_render_create(RENDER_API_VULKAN, window);
 
         enable_input_tracking();
@@ -291,15 +301,17 @@ int main(void) {
         //printf("%p\n", file->sections[1].data);
 
         SGE_BOOL is_first_frame = SGE_TRUE;
+        uint32_t frame_count = 0;
 
         while (!window_should_close()) {
                 //printf("STARTED LOOP");
                 //do stuff
                 //timeBeginPeriod(1);
+                frame_count++;
                 const DWORD start_time = get_current_ms_time();
 
                 sge_region *active_region = sge_region_get_active(render);
-                log_event(LOG_LEVEL_INFO, "checking active region");
+                //log_event(LOG_LEVEL_INFO, "checking active region");
                 //if (active_region != NULL && active_region->type == SGE_REGION_2D) {
                 //        log_event(LOG_LEVEL_INFO, "2d region unsetting");
                 //        active_region = NULL;
@@ -379,7 +391,14 @@ int main(void) {
                         .flags = 0,
                 };
 
+                if (mouse_movement_settings.mouse_delta_x > 250 || mouse_movement_settings.mouse_delta_x < -250
+                        || mouse_movement_settings.mouse_delta_y > 250 || mouse_movement_settings.mouse_delta_y < -250) {
+                        mouse_movement_settings.mouse_delta_x = 0;
+                        mouse_movement_settings.mouse_delta_y = 0;
+                }
+
                 if (is_mouse_down(MBUTTON_RIGHT)) {
+                        printf("RM DOWN\n");
                         hide_mouse();
                         sge_camera_rotate(render, active_region, mouse_movement_settings);
                 }
@@ -398,9 +417,21 @@ int main(void) {
                 update_frame(target_fps, start_time, window);
                 //timeEndPeriod(1);
                 //printf("REACHED LOOP END, REPEATING");
-                if (is_first_frame) {
-                        is_first_frame = SGE_FALSE;
-                        sge_window_show(render->window);
+                if (frame_count == 99999) {
+                        log_event(LOG_LEVEL_INFO, "UPDATING WIN MODE");
+                        if (!secondary_screen) {
+                                terminate_program();
+                        }
+                        sge_window_create_settings win_update_settings = {
+                                .window_mode = SGE_WINDOW_MODE_BORDERLESS_FULLSCREEN,
+                                .screen = secondary_screen,
+                                .x = 100,
+                                .y = 200,
+                                .height = 500,
+                                .width = 2000,
+                                .is_resizable = SGE_FALSE
+                        };
+                        sge_window_mode_update(window, &win_update_settings);
                 }
         }
 
