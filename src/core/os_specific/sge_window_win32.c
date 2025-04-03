@@ -28,6 +28,7 @@ bool is_resize = false;
 bool is_hidden = false;
 bool has_changed = false;
 bool ignore_next_mousemove = true;
+SGE_BOOL tracki_mousi = SGE_FALSE;
 mouse_pos last_visible_pos = {0,0};
 
 extern SGE_BOOL is_tracking_enabled;
@@ -198,6 +199,16 @@ LRESULT CALLBACK wndProc(const HWND hwnd, const UINT uMsg, const WPARAM wparam, 
                         x_pos = client_pos.x;
                         y_pos = client_pos.y;
 
+                        if (!tracki_mousi) {
+                                TRACKMOUSEEVENT leave_event = {
+                                        .cbSize = sizeof(TRACKMOUSEEVENT),
+                                        .dwFlags = TME_LEAVE,
+                                        .hwndTrack = hwnd,
+                                };
+                                TrackMouseEvent(&leave_event);
+                                tracki_mousi = SGE_TRUE;
+                        }
+
                         //todo make smoother very laggy
                         if (is_hidden) {
                                 //printf("NEW MOUSE POS\nX: %i, Y: %i\n\n", x_pos, y_pos);
@@ -221,7 +232,13 @@ LRESULT CALLBACK wndProc(const HWND hwnd, const UINT uMsg, const WPARAM wparam, 
 
                 } break;
 
-
+                case WM_MOUSELEAVE: {
+                        tracki_mousi = SGE_FALSE;
+                        last_mouse_pos.x = -1;
+                        last_mouse_pos.y = -1;
+                        delta_mouse_pos.x = 0;
+                        delta_mouse_pos.y = 0;
+                }
 
                 case WM_LBUTTONDOWN: {
                         if (!is_tracking_enabled) {
