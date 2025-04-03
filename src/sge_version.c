@@ -13,3 +13,19 @@ SGE_VERSION get_sge_version() {
 
         return current_version;
 }
+
+uint32_t sge_make_app_version(uint32_t major, uint32_t minor, uint32_t patch) {
+        return major << 22U | minor << 12U | patch;
+}
+
+uint32_t sge_extract_major(uint32_t version) {
+        return version >> 22 & 0x3FF;
+}
+
+uint32_t sge_extract_minor(uint32_t version) {
+        return version >> 12 & 0x3FF;
+}
+
+uint32_t sge_extract_patch(uint32_t version) {
+        return version & 0xFFF;
+}
