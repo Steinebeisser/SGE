@@ -24,7 +24,7 @@ uint32_t calculate_crc32(void *data, size_t length) {
         return crc ^ 0xFFFFFFFF;
 }
 
-SGE_RESULT sge_rend_save(char *filename, SGE_REND_SECTION *sections, uint16_t section_count) {
+SGE_RESULT sge_rend_save(char *filename, sge_rend_section *sections, uint16_t section_count) {
         char save_filename[256];
         zero_memory(save_filename, sizeof(save_filename), 0);
         strcat(save_filename, filename);
@@ -112,7 +112,7 @@ SGE_RESULT sge_rend_save(char *filename, SGE_REND_SECTION *sections, uint16_t se
         //////////////////////////////////////////////////////////////////////////////////
         //SECTIONS
         for (int i = 0; i < section_count; ++i) {
-                SGE_REND_SECTION section = sections[i];
+                sge_rend_section section = sections[i];
                 int section_buffer_offset = 0;
                 int section_header_size = SGE_REND_SECTION_HEADER_FIXED_SIZE + section.section_header.extension_size;
                 void *section_header_buffer = allocate_memory(section_header_size, MEMORY_TAG_RENDERER);
@@ -177,14 +177,14 @@ SGE_RESULT sge_rend_save(char *filename, SGE_REND_SECTION *sections, uint16_t se
 }
 
 
-SGE_RESULT sge_rend_load(char *filename, SGE_REND_FILE **outFile) {
+SGE_RESULT sge_rend_load(char *filename, sge_rend_file **outFile) {
         FILE *fd = fopen(filename, "rb");
         if (!fd) {
             log_internal_event(LOG_LEVEL_ERROR, "failed to open file");
             return SGE_ERROR;
         }
 
-        *outFile = (SGE_REND_FILE*)allocate_memory(sizeof(SGE_REND_FILE), MEMORY_TAG_RENDERER);
+        *outFile = (sge_rend_file*)allocate_memory(sizeof(sge_rend_file), MEMORY_TAG_RENDERER);
         if (*outFile == NULL) {
             log_internal_event(LOG_LEVEL_ERROR, "Memory allocation failed for outFile");
             return SGE_ERROR;
@@ -209,7 +209,7 @@ SGE_RESULT sge_rend_load(char *filename, SGE_REND_FILE **outFile) {
 
         (*outFile)->header.section_count = section_count;
 
-        (*outFile)->sections = (SGE_REND_SECTION*)allocate_memory(sizeof(SGE_REND_SECTION) * section_count, MEMORY_TAG_RENDERER);
+        (*outFile)->sections = (sge_rend_section*)allocate_memory(sizeof(sge_rend_section) * section_count, MEMORY_TAG_RENDERER);
         if ((*outFile)->sections == NULL) {
             log_internal_event(LOG_LEVEL_ERROR, "Memory allocation failed for sections");
             return SGE_ERROR;
@@ -258,7 +258,7 @@ SGE_RESULT sge_rend_load(char *filename, SGE_REND_FILE **outFile) {
         //printf("Checksum: %d\n", global_header_checksum);
 
         for (uint16_t i = 0; i < section_count; ++i) {
-                SGE_REND_SECTION *section = &(*outFile)->sections[i];
+                sge_rend_section *section = &(*outFile)->sections[i];
 
                 if (fread(&section->section_header.type, sizeof(uint16_t), 1, fd) != 1) {
                     log_internal_event(LOG_LEVEL_FATAL, "Failed to read section type");
@@ -279,7 +279,7 @@ SGE_RESULT sge_rend_load(char *filename, SGE_REND_FILE **outFile) {
 
                 //todo store extension data
                 if (section->section_header.extension_count > 0) {
-                    section->section_header.extensions = allocate_memory(section->section_header.extension_count * sizeof(SGE_REND_EXTENSION), MEMORY_TAG_RENDERER);
+                    section->section_header.extensions = allocate_memory(section->section_header.extension_count * sizeof(sge_rend_extension), MEMORY_TAG_RENDERER);
                         if(section->section_header.extensions == NULL){
                             log_internal_event(LOG_LEVEL_FATAL, "Failed to allocate section extensions");
                             return SGE_ERROR;
@@ -320,9 +320,9 @@ SGE_RESULT sge_rend_load(char *filename, SGE_REND_FILE **outFile) {
 }
 
 
-SGE_MESH_DATA *sge_parse_mesh_data(void *raw_data, size_t data_size) {
+sge_mesh_data *sge_parse_mesh_data(void *raw_data, size_t data_size) {
         //printf("data size: %llu\n",     data_size);
-        SGE_MESH_DATA *mesh_data = allocate_memory(sizeof(SGE_MESH_DATA), MEMORY_TAG_RENDERER);
+        sge_mesh_data *mesh_data = allocate_memory(sizeof(sge_mesh_data), MEMORY_TAG_RENDERER);
         if (mesh_data == NULL) {
                 log_internal_event(LOG_LEVEL_FATAL, "failed allocate for mesh data");
                 return NULL;
@@ -340,7 +340,7 @@ SGE_MESH_DATA *sge_parse_mesh_data(void *raw_data, size_t data_size) {
         copy_memory(&mesh_data->attribute_count, data, sizeof(uint32_t), 0, offset);
         offset += sizeof(uint32_t);
 
-        mesh_data->attributes = allocate_memory(sizeof(SGE_MESH_ATTRIBUTE) * mesh_data->attribute_count, MEMORY_TAG_RENDERER);
+        mesh_data->attributes = allocate_memory(sizeof(sge_mesh_attribute) * mesh_data->attribute_count, MEMORY_TAG_RENDERER);
         if (mesh_data->attributes == NULL) {
                 log_internal_event(LOG_LEVEL_FATAL, "failed to allocate attributes");
                 return NULL;
@@ -375,18 +375,18 @@ SGE_MESH_DATA *sge_parse_mesh_data(void *raw_data, size_t data_size) {
 
 
 
-SGE_REND_SECTION *sge_create_mesh_section(
+sge_rend_section *sge_create_mesh_section(
         char *name,
         void *vertex_data,
         uint32_t vertex_count,
         uint32_t vertex_size,
-        SGE_MESH_ATTRIBUTE *attributes,
+        sge_mesh_attribute *attributes,
         uint32_t attribute_count,
-        SGE_REND_EXTENSION *extensions,
+        sge_rend_extension *extensions,
         uint32_t extension_count
 
 ) {
-        SGE_REND_SECTION *mesh_section = allocate_memory(sizeof(SGE_REND_SECTION), MEMORY_TAG_RENDERER);
+        sge_rend_section *mesh_section = allocate_memory(sizeof(sge_rend_section), MEMORY_TAG_RENDERER);
 
         mesh_section->section_header.type = SGE_SECTION_MESH;
         copy_memory(mesh_section->section_header.name, name, strlen(name), 0, 0);
@@ -433,7 +433,7 @@ SGE_REND_SECTION *sge_create_mesh_section(
                 sizeof(uint32_t);       //attribute_count
 
 
-        size_t attribute_data_size = attribute_count * sizeof(SGE_MESH_ATTRIBUTE);
+        size_t attribute_data_size = attribute_count * sizeof(sge_mesh_attribute);
         size_t vertex_data_size = vertex_count * vertex_size;
         size_t total_data_size = data_header_size + attribute_data_size + vertex_data_size;
 
@@ -455,8 +455,8 @@ SGE_REND_SECTION *sge_create_mesh_section(
         data_offset += sizeof(uint32_t);
 
         for (uint32_t i = 0; i < attribute_count; ++i) {
-                copy_memory(data, &attributes[i], sizeof(SGE_MESH_ATTRIBUTE), data_offset, 0);
-                data_offset += sizeof(SGE_MESH_ATTRIBUTE);
+                copy_memory(data, &attributes[i], sizeof(sge_mesh_attribute), data_offset, 0);
+                data_offset += sizeof(sge_mesh_attribute);
         }
 
         copy_memory(data, vertex_data, vertex_data_size, data_offset, 0);
@@ -468,6 +468,6 @@ SGE_REND_SECTION *sge_create_mesh_section(
 }
 
 
-SGE_REND_SECTION sge_create_index_section();
-SGE_REND_SECTION sge_create_material_section();
-SGE_REND_SECTION sge_create_shader_binding_section();
+sge_rend_section sge_create_index_section();
+sge_rend_section sge_create_material_section();
+sge_rend_section sge_create_shader_binding_section();

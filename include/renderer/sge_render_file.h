@@ -99,57 +99,57 @@ typedef enum {
         SGE_MSAA_MAX_ENUM     = 0x7FFFFFFF,
 } SGE_MSAA_COUNT; //sint32_t
 
-typedef struct SGE_REND_EXTENSION {
+typedef struct sge_rend_extension {
         uint16_t                type;
         uint32_t                data_size;
         uint8_t*                data;
-} SGE_REND_EXTENSION;
+} sge_rend_extension;
 
-typedef struct SGE_REND_HEADER {
+typedef struct sge_rend_header {
         uint16_t                major_version;
         uint16_t                minor_version;
         uint16_t                patch_version;
         uint16_t                section_count;
         uint16_t                extension_count;
-        SGE_REND_EXTENSION      *extensions;
+        sge_rend_extension      *extensions;
         char                    name[64];
         uint32_t                checksum;
-} SGE_REND_HEADER;
+} sge_rend_header;
 
-typedef struct SGE_REND_SECTION_HEADER {
+typedef struct sge_rend_section_header {
         uint16_t                type;
         uint64_t                offset;
         uint64_t                data_size;
         uint16_t                extension_count;
         size_t                  extension_size;
-        SGE_REND_EXTENSION      *extensions;
+        sge_rend_extension      *extensions;
         char                    name[64];
         uint32_t                checksum;
-} SGE_REND_SECTION_HEADER;
+} sge_rend_section_header;
 
-typedef struct SGE_MESH_ATTRIBUTE {
+typedef struct sge_mesh_attribute {
         uint16_t                type;
         uint16_t                format;
         uint16_t                components;
         uint16_t                offset;
-} SGE_MESH_ATTRIBUTE;
+} sge_mesh_attribute;
 
-typedef struct SGE_MESH_DATA {
+typedef struct sge_mesh_data {
         uint32_t                vertex_count;
         uint32_t                vertex_size;
         uint32_t                attribute_count;
-        SGE_MESH_ATTRIBUTE      *attributes;
+        sge_mesh_attribute      *attributes;
         uint8_t                 *vertex_data;
-} SGE_MESH_DATA;
+} sge_mesh_data;
 
-typedef struct SGE_INDEX_BUFFER_DATA {
+typedef struct sge_index_buffer_data {
         uint32_t                index_count;
         uint32_t                primitive_type;
         uint16_t                index_size;
         uint8_t                 *index_data;
-} SGE_INDEX_BUFFER_DATA;
+} sge_index_buffer_data;
 
-typedef struct SGE_MATERIAL_PARAMETER {
+typedef struct sge_material_parameter {
         uint16_t                type;
         char                    name[32];
         union {
@@ -159,63 +159,62 @@ typedef struct SGE_MATERIAL_PARAMETER {
                 float           vec4_value[4];
                 uint32_t        texture_index;
         } value;
-} SGE_MATERIAL_PARAMETER;
+} sge_material_parameter;
 
-typedef struct SGE_MATERIAL_DATA {
+typedef struct sge_material_data {
         uint32_t                parameter_count;
-        SGE_MATERIAL_PARAMETER  *parameters;
+        sge_material_parameter  *parameters;
         uint32_t                shader_binding_index;
-} SGE_MATERIAL_DATA;
+} sge_material_data;
 
-typedef struct SGE_SHADER_PARAMETER_BINDING {
+typedef struct sge_shader_parameter_binding {
         char                    name[32];
         uint16_t                type;
-} SGE_SHADER_PARAMETER_BINDING;
+} sge_shader_parameter_binding;
 
-typedef struct SGE_SHADER_BINDING_DATA {
+typedef struct sge_shader_binding_data {
         char                            shader_identifier[64];
         uint32_t                        parameter_count;
-        SGE_SHADER_PARAMETER_BINDING    *parameter_bindings;
-} SGE_SHADER_BINDING_DATA;
+        sge_shader_parameter_binding    *parameter_bindings;
+} sge_shader_binding_data;
 
-typedef struct SGE_REND_SECTION {
-        SGE_REND_SECTION_HEADER section_header;
+typedef struct sge_rend_section {
+        sge_rend_section_header section_header;
         void                    *data;
-} SGE_REND_SECTION;
+} sge_rend_section;
 
-typedef struct SGE_REND_FILE {
-        SGE_REND_HEADER         header;
-        SGE_REND_SECTION        *sections;
-} SGE_REND_FILE;
+typedef struct sge_rend_file {
+        sge_rend_header         header;
+        sge_rend_section        *sections;
+} sge_rend_file;
 
 #include "renderer/sge_render.h"
 
-SGE_RESULT sge_rend_save(char *filename, SGE_REND_SECTION *sections, uint16_t section_count);
-SGE_RESULT sge_rend_load(char *filename, SGE_REND_FILE **outFile);
+SGE_RESULT sge_rend_save(char *filename, sge_rend_section *sections, uint16_t section_count);
+SGE_RESULT sge_rend_load(char *filename, sge_rend_file **outFile);
 
-SGE_MESH_DATA *sge_create_mesh_data();
-SGE_INDEX_BUFFER_DATA *sge_create_index_buffer_data();
-SGE_MATERIAL_DATA *sge_create_material_data();
-SGE_SHADER_BINDING_DATA *sge_create_shader_binding();
+sge_mesh_data *sge_create_mesh_data();
+sge_index_buffer_data *sge_create_index_buffer_data();
+sge_material_data *sge_create_material_data();
+sge_shader_binding_data *sge_create_shader_binding();
 
-SGE_MESH_DATA *sge_parse_mesh_data(void *raw_data, size_t data_size);
-SGE_INDEX_BUFFER_DATA *sge_parse_index_buffer_data();
-SGE_MATERIAL_DATA *sge_parse_material_data();
-SGE_SHADER_BINDING_DATA *sge_parse_shader_binding();
+sge_mesh_data *sge_parse_mesh_data(void *raw_data, size_t data_size);
+sge_index_buffer_data *sge_parse_index_buffer_data();
+sge_material_data *sge_parse_material_data();
+sge_shader_binding_data *sge_parse_shader_binding();
 
 
-SGE_REND_SECTION *sge_create_mesh_section(
+sge_rend_section *sge_create_mesh_section(
                 char *name,
                 void *vertex_data,
                 uint32_t vertex_count,
                 uint32_t vertex_size,
-                SGE_MESH_ATTRIBUTE *attributes,
+                sge_mesh_attribute *attributes,
                 uint32_t attribute_count,
-                SGE_REND_EXTENSION *extensions,
-                uint32_t extension_count
-        );
-SGE_REND_SECTION sge_create_index_section();
-SGE_REND_SECTION sge_create_material_section();
-SGE_REND_SECTION sge_create_shader_binding_section();
+                sge_rend_extension *extensions,
+                uint32_t extension_count);
+sge_rend_section sge_create_index_section();
+sge_rend_section sge_create_material_section();
+sge_rend_section sge_create_shader_binding_section();
 
 #endif //SGE_RENDER_FILE_H
