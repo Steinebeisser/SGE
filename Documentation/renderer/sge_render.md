@@ -286,12 +286,16 @@ typedef enum SGE_GEOMETRY_TYPE {
 
 ---
 
-### Examples
+## Examples
+
+### Create Render
 Using a Window Created in [sge_window.md](../core/platform/sge_window.md#examples)
 ```c
 sge_render *render = sge_render_create(SGE_RENDER_API_VULKAN, window);
 ```
 
+### Initializing Render
+###
 ```c
 sge_render_settings *settings = allocate_memory(sizeof(sge_render_settings), MEMORY_TAG_RENDERER);
 settings = &(sge_render_settings){
@@ -308,6 +312,7 @@ settings = &(sge_render_settings){
 sge_render_initialize(render, settings);
 ```
 
+### Create Renderable
 Renderable file created in [sge_render_file.md](sge_render_file.md)
 ```c
 sge_renderable *cube = create_renderable_from_rend_file(render, cube_file);
