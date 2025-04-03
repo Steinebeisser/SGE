@@ -84,6 +84,10 @@ SGE_RESULT sge_camera_rotate(sge_render *render, sge_region *move_region, sge_mo
                 return SGE_SUCCESS;
         }
 
+        if (!move_region) {
+                return SGE_INVALID_API_CALL;
+        }
+
         uint32_t region_index = move_region->region_index;
 
         if (movement_settings.flags & SGE_MOUSE_INVERT_Y) {

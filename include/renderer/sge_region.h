@@ -7,7 +7,6 @@
 #include <stdbool.h>
 
 #include "renderer/sge_camera.h"
-#include "renderer/sge_render.h"
 
 #define SGE_REGION_FULL_DIMENSION -1000
 

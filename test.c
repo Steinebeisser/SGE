@@ -37,10 +37,12 @@ int main(void) {
                 .window_mode = SGE_WINDOW_MODE_BORDERLESS,
                 .width = 700,
                 .height = 500,
+                .x = 200,
+                .y = 200,
                 .is_resizable = SGE_TRUE
         };
         sge_window *window= sge_window_create("Test Window", &window_create_settings);
-        sge_render *render = sge_render_create(RENDER_API_VULKAN, window);
+        sge_render *render = sge_render_create(SGE_RENDER_API_VULKAN, window);
 
         enable_input_tracking();
         //vulkan_context *vk_context = allocate_memory(sizeof(vulkan_context), MEMORY_TAG_VULKAN);
@@ -49,9 +51,17 @@ int main(void) {
         //}
 
         sge_render_settings *settings = allocate_memory(sizeof(sge_render_settings), MEMORY_TAG_RENDERER);
-        settings->vulkan.enable_validation_layers = true;
-        settings->vulkan.use_dynamic_rendering = true;
-        settings->vulkan.use_sge_allocator = false;
+        settings = &(sge_render_settings){
+                .vulkan = {
+                        .enable_validation_layers = SGE_TRUE,
+                        .use_dynamic_rendering = SGE_TRUE,
+                        .use_sge_allocator = SGE_TRUE,
+                        .app_info = {
+                                .application_name = "Test Example",
+                                .application_version = sge_make_app_version(0, 1, 1)
+                        }
+                }
+        };
         sge_render_initialize(render, settings);
 
         const int target_fps = 0;
@@ -86,7 +96,6 @@ int main(void) {
 
         sge_region *main_region = sge_region_create(render, &region_setting_3d);
 
-        sge_renderable *logo_renderable = create_logo_renderable(render);
         //sge_add_renderable(render, logo_renderable);
 
         //sge_region_add_renderable(main_region, logo_renderable);
@@ -398,7 +407,6 @@ int main(void) {
                 }
 
                 if (is_mouse_down(MBUTTON_RIGHT)) {
-                        printf("RM DOWN\n");
                         hide_mouse();
                         sge_camera_rotate(render, active_region, mouse_movement_settings);
                 }
@@ -417,7 +425,7 @@ int main(void) {
                 update_frame(target_fps, start_time, window);
                 //timeEndPeriod(1);
                 //printf("REACHED LOOP END, REPEATING");
-                if (frame_count == 99999) {
+                if (frame_count == 2500) {
                         log_event(LOG_LEVEL_INFO, "UPDATING WIN MODE");
                         if (!secondary_screen) {
                                 terminate_program();

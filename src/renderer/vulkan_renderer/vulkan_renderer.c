@@ -10,9 +10,7 @@
 
 
 sge_renderer_interface sge_vulkan_interface = {
-        .begin_frame = sge_vulkan_begin_frame,
         .draw = sge_vulkan_draw_frame,
-        .end_frame = sge_vulkan_end_frame,
         .initialize = sge_vulkan_initialize,
         .shutdown = sge_vulkan_shutdown,
         .set_pipeline = sge_set_pipeline,
