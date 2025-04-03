@@ -58,7 +58,6 @@ sge_region *sge_region_create(sge_render *render, sge_region_settings *settings)
         region->region_index = render->region_count;
         region->auto_scale_on_resize = settings->auto_scale_on_resize;
         region->reposition_on_resize = settings->auto_reposition_on_resize;
-        region->auto_update_frames = settings->auto_update;
         region->z_index = settings->z_index;
 
         region->type = settings->type;
@@ -116,6 +115,9 @@ sge_region *sge_region_create(sge_render *render, sge_region_settings *settings)
 SGE_RESULT sge_region_add_renderable(sge_region *region, sge_renderable *renderable) {
         region->renderable_count++;
         region->renderables = reallocate_memory(region->renderables, sizeof(sge_renderable *) * region->renderable_count, MEMORY_TAG_RENDERER);
+        if (region->renderables == NULL) {
+                return SGE_ERROR_FAILED_ALLOCATION;
+        }
         region->renderables[region->renderable_count - 1] = renderable;
 
         log_internal_event(LOG_LEVEL_INFO, "added renderable to region");
@@ -269,6 +271,9 @@ sge_region **sge_region_get_active_list(sge_render *render, int *regions_count) 
         }
 
 
+        if (*regions_count <= 0) {
+                return NULL;
+        }
 
         if (*regions_count > 1) {
                 qsort(regions, *regions_count, sizeof(sge_region*), compare_z_index);

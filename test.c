@@ -81,9 +81,8 @@ int main(void) {
         print_memory_usage_str();
 
         sge_region_settings region_setting_3d = {
-                .auto_update = true,
-                .auto_scale_on_resize = true,
-                .auto_reposition_on_resize = false,
+                .auto_scale_on_resize = SGE_TRUE,
+                .auto_reposition_on_resize = SGE_FALSE,
                 .height = SGE_REGION_FULL_DIMENSION,
                 .width = SGE_REGION_FULL_DIMENSION,
                 .offset_x = 0,
@@ -101,7 +100,6 @@ int main(void) {
         //sge_region_add_renderable(main_region, logo_renderable);
 
         sge_region_settings second_setting_2d = {
-                .auto_update = true,
                 .auto_scale_on_resize = true,
                 .auto_reposition_on_resize = true,
                 .height = SGE_REGION_FULL_DIMENSION,
@@ -327,6 +325,12 @@ int main(void) {
                 //}
                 int regions_count;
                 sge_region **active_regions = sge_region_get_active_list(render, &regions_count);
+                        printf("%d\n", regions_count);
+                for (int i = 0; i < regions_count; ++i) {
+                        sge_region *region = active_regions[i];
+                        printf("Region Type: %d\n", region->type);
+                }
+
                 //for (int i = 0; i < regions_count; ++i) {
                 //        printf("ACTIVE REGIONS: %i\n", i);
                 //}
@@ -425,7 +429,7 @@ int main(void) {
                 update_frame(target_fps, start_time, window);
                 //timeEndPeriod(1);
                 //printf("REACHED LOOP END, REPEATING");
-                if (frame_count == 2500) {
+                if (frame_count == 1) {
                         log_event(LOG_LEVEL_INFO, "UPDATING WIN MODE");
                         if (!secondary_screen) {
                                 terminate_program();

@@ -4,23 +4,21 @@
 
 #ifndef SGE_REGION_H
 #define SGE_REGION_H
-#include <stdbool.h>
 
 #include "renderer/sge_camera.h"
 
 #define SGE_REGION_FULL_DIMENSION -1000
 
 
-typedef enum sge_region_type {
+typedef enum SGE_REGION_TYPE {
         SGE_REGION_3D,
         SGE_REGION_2D
-} sge_region_type;
+} SGE_REGION_TYPE;
 
 typedef struct sge_region_settings {
-        sge_region_type type;
-        bool            auto_update;
-        bool            auto_scale_on_resize;
-        bool            auto_reposition_on_resize;
+        SGE_REGION_TYPE type;
+        SGE_BOOL        auto_scale_on_resize;
+        SGE_BOOL        auto_reposition_on_resize;
         int             width;
         int             height;
         int             offset_x;
@@ -38,7 +36,7 @@ typedef struct sge_uniform_buffer_type {
 } sge_uniform_buffer_type;
 
 typedef struct sge_region {
-        sge_region_type                 type;
+        SGE_REGION_TYPE                 type;
         sge_camera                      *camera;
         sge_viewport                    *viewport;
         sge_scissor                     *scissor;
@@ -46,9 +44,8 @@ typedef struct sge_region {
         size_t                          renderable_count;
         sge_uniform_buffer_object       transform_ubo;
         uint32_t                        region_index;
-        bool                            auto_scale_on_resize;
-        bool                            auto_update_frames;
-        bool                            reposition_on_resize;
+        SGE_BOOL                        auto_scale_on_resize;
+        SGE_BOOL                        reposition_on_resize;
         sge_uniform_buffer_type         uniform_buffers[3];
         void                            *descriptor_pool;
         int                             z_index;
