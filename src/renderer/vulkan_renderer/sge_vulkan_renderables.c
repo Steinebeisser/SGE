@@ -29,7 +29,7 @@ SGE_RESULT sge_vulkan_create_renderable_resources(sge_render *render, sge_render
         SGE_BOOL is_3d = SGE_FALSE;
 
         for (int i = 0; i < renderable->mesh->attribute_count; ++i) {
-                SGE_MESH_ATTRIBUTE attribute = renderable->mesh->attributes[i];
+                sge_mesh_attribute attribute = renderable->mesh->attributes[i];
                 if (attribute.type == SGE_ATTRIBUTE_POSITION) {
                         if (attribute.components == 2) {
                                 is_3d = SGE_FALSE;
@@ -201,7 +201,7 @@ SGE_RESULT sge_vulkan_convert_sge_format_to_vulkan_format(sge_renderable *render
 
         for (int i = 0; i < format->attribute_count; ++i) {
                 sge_vertex_attribute *format_attribute = &format->attributes[i];
-                SGE_MESH_ATTRIBUTE *mesh_attribute = &renderable->mesh->attributes[i];
+                sge_mesh_attribute *mesh_attribute = &renderable->mesh->attributes[i];
 
                 format_attribute->location = sge_get_location_from_attribute_type(mesh_attribute->type);
                 format_attribute->offset = mesh_attribute->offset;

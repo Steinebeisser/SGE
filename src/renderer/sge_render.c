@@ -127,7 +127,7 @@ SGE_RESULT sge_renderable_create_api_resources(sge_render *render, sge_renderabl
         return SGE_SUCCESS;
 }
 
-sge_renderable *create_renderable_from_rend_file(sge_render *render, SGE_REND_FILE *file) {
+sge_renderable *create_renderable_from_rend_file(sge_render *render, sge_rend_file *file) {
         if (file == NULL) {
                 log_internal_event(LOG_LEVEL_FATAL, "tried to create renderable from file without passing file");
                 return NULL;
@@ -143,11 +143,11 @@ sge_renderable *create_renderable_from_rend_file(sge_render *render, SGE_REND_FI
 
 
         for (int i = 0; i < file->header.section_count; ++i) {
-                SGE_REND_SECTION *section = &file->sections[i];
+                sge_rend_section *section = &file->sections[i];
 
                 switch (section->section_header.type) {
                         case SGE_SECTION_MESH: {
-                                SGE_MESH_DATA *mesh_data = sge_parse_mesh_data(section->data, section->section_header.data_size);
+                                sge_mesh_data *mesh_data = sge_parse_mesh_data(section->data, section->section_header.data_size);
                                 if (mesh_data == NULL) {
                                         log_internal_event(LOG_LEVEL_FATAL, "failed to parse mesh data");
                                         return NULL;
@@ -169,7 +169,7 @@ sge_renderable *create_renderable_from_rend_file(sge_render *render, SGE_REND_FI
                                 renderable->mesh->vertex_size = mesh_data->vertex_size;
                                 renderable->mesh->attribute_count = mesh_data->attribute_count;
 
-                                renderable->mesh->attributes = allocate_memory(sizeof(SGE_MESH_ATTRIBUTE) * renderable->mesh->attribute_count, MEMORY_TAG_RENDERER);
+                                renderable->mesh->attributes = allocate_memory(sizeof(sge_mesh_attribute) * renderable->mesh->attribute_count, MEMORY_TAG_RENDERER);
 
                                 if (renderable->mesh->attributes == NULL) {
                                         log_internal_event(LOG_LEVEL_FATAL, "failed to allocate for attributes or no attributes specified, atleast position required");
@@ -177,7 +177,7 @@ sge_renderable *create_renderable_from_rend_file(sge_render *render, SGE_REND_FI
                                 }
 
                                 log_internal_event(LOG_LEVEL_DEBUG, "copying attributes");
-                                copy_memory(renderable->mesh->attributes, mesh_data->attributes, sizeof(SGE_MESH_ATTRIBUTE) * renderable->mesh->attribute_count, 0, 0);
+                                copy_memory(renderable->mesh->attributes, mesh_data->attributes, sizeof(sge_mesh_attribute) * renderable->mesh->attribute_count, 0, 0);
                                 log_internal_event(LOG_LEVEL_DEBUG, "finished copying attributes");
 
                                 renderable->mesh->vertex_buffer.size = mesh_data->vertex_count * mesh_data->vertex_size;
