@@ -15,7 +15,7 @@ int *last_key_states = NULL;
 int *mouse_states = NULL;
 int *last_mouse_states = NULL;
 SGE_BOOL is_tracking_enabled = SGE_FALSE;
-mouse_pos last_mouse_pos = {0, 0};
+mouse_pos last_mouse_pos = {-1, -1};
 mouse_pos delta_mouse_pos = {0,0};
 
 SGE_RESULT enable_input_tracking() {
