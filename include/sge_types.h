@@ -23,6 +23,7 @@ typedef struct SGE_VERSION {
 typedef enum SGE_RESULT {
         SGE_SUCCESS = 0,
         SGE_ERROR,
+        SGE_INVALID_API_CALL,
         SGE_RESIZE,
         SGE_ERROR_INVALID_API,
         SGE_ERROR_FAILED_ALLOCATION,
