@@ -101,10 +101,6 @@ typedef enum SGE_WINDOW_MODE {
 - Pointer to the created `sge_window` struct.
 - `NULL` if it failed to create the window.
 
-### Example
-```c
-
-```
 ---
 
 ### `SGE_RESULT sge_window_destroy(sge_window *window);`
