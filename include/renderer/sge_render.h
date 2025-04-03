@@ -75,7 +75,7 @@ typedef struct sge_mesh {
         uint32_t                attribute_count;
         uint32_t                vertex_count;
         uint32_t                index_count;
-        SGE_MESH_ATTRIBUTE      *attributes;
+        sge_mesh_attribute      *attributes;
         sge_vertex_format       *format;
         char                    name[64];
 } sge_mesh;
@@ -162,7 +162,7 @@ SGE_RESULT sge_render_initialize(sge_render *render, sge_render_settings *settin
 
 SGE_RESULT sge_draw_frame(sge_render *render);
 
-sge_renderable *create_renderable_from_rend_file(sge_render *render, SGE_REND_FILE *file);
+sge_renderable *create_renderable_from_rend_file(sge_render *render, sge_rend_file *file);
 
 #endif //SGE_RENDER_H
 
