@@ -34,6 +34,8 @@
 #include "renderer/sge_region.h"
 
 #include "renderer/apis/sge_vulkan.h"
+#include "renderer/apis/sge_opengl.h"
+#include "renderer/apis/sge_directx.h"
 
 #include "renderer/shader/sge_shader_utils.h"
 

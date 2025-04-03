@@ -10,6 +10,8 @@
 #include "core/sge_internal_logging.h"
 #include "core/memory_control.h"
 
+#include "renderer/sge_internal_render.h"
+
 extern bool is_hidden;
 extern mouse_pos last_visible_pos;
 

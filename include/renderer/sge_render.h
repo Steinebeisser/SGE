@@ -5,24 +5,23 @@
 #ifndef SGE_RENDER_H
 #define SGE_RENDER_H
 
-
-#include <stdbool.h>
+#include "sge_types.h"
 
 #include "core/platform/sge_window.h"
-#include "utils/sge_math.h"
 #include "renderer/sge_render_file.h"
-#include "sge_types.h"
 #include "renderer/apis/sge_vulkan.h"
+#include "renderer/apis/sge_opengl.h"
+#include "renderer/apis/sge_directx.h"
 
 #include <stdio.h>
 
 
 
-typedef enum sge_render_api {
-        RENDER_API_VULKAN,
-        RENDER_API_DIRECTX,
-        RENDER_API_OPENGL
-} render_api;
+typedef enum SGE_RENDER_API {
+        SGE_RENDER_API_VULKAN,
+        SGE_RENDER_API_DIRECTX,
+        SGE_RENDER_API_OPENGL
+} SGE_RENDER_API;
 
 typedef enum SGE_GEOMETRY_TYPE {
         SGE_GEOMETRY_2D,
@@ -48,12 +47,6 @@ typedef struct sge_vertex_format {
         size_t                  attribute_count;
 } sge_vertex_format;
 
-typedef struct sge_shader { //SPIR-V vulkan, HLSL directx, GLSL opengl
-        render_api api;
-        void *api_shader;
-} sge_shader;
-
-//todo use
 typedef struct sge_pipeline_settings {
         sge_vertex_format       *vertex_format;
 
@@ -87,23 +80,15 @@ typedef struct sge_mesh {
         char                    name[64];
 } sge_mesh;
 
-typedef struct sge_material {
-        sge_shader      *vertex_shader;
-        sge_shader      *fragment_shader;
-        vec4            color;
-        char name[64];
-} sge_material;
-
 typedef struct sge_renderable {
         sge_mesh        *mesh;
-        sge_material    *material;
         char            name[64];
         void            *pipeline;
         void            *pipeline_layout;
 } sge_renderable;
 
 typedef struct sge_pipeline {
-        render_api api;
+        SGE_RENDER_API api;
         void *api_pipeline;
 } sge_pipeline;
 
@@ -132,9 +117,7 @@ typedef struct sge_window sge_window;
 typedef struct sge_renderer_interface {
         SGE_RESULT (*initialize)(sge_render *render, sge_render_settings *settings);
         SGE_RESULT (*shutdown)(sge_render *render);
-        SGE_RESULT (*begin_frame)(sge_render *render);
         SGE_RESULT (*draw)(sge_render *render);
-        SGE_RESULT (*end_frame)(sge_render *render);
         SGE_RESULT (*set_pipeline)(sge_render *render, sge_pipeline *pipeline);
         SGE_RESULT (*update_uniform)(sge_render *render, sge_region *region);
         SGE_RESULT (*create_buffer)(sge_render *render, void **buffer_ptr);                             // !! uniform buffer !! todo to make setting
@@ -156,28 +139,14 @@ typedef struct sge_view {
 } sg_view;
 
 typedef struct sge_render {
-        render_api              api;
-        void                    *api_context;
-        sge_window              *window;
-        sge_renderer_interface  *sge_interface;
-        sge_region              **regions;
-        size_t                  region_count;
+        SGE_RENDER_API                  api;
+        void                            *api_context;
+        sge_window                      *window;
+        sge_renderer_interface          *sge_interface;
+        sge_region                      **regions;
+        size_t                          region_count;
 } sge_render;
 
-typedef struct sge_vulkan_render_settings {
-        bool                    enable_validation_layers;
-        bool                    use_dynamic_rendering;
-        bool                    use_sge_allocator; //resource expensive/slow, use at debug if u want to - todo improve is needed if more than 1024 allocation done
-        vulkan_app_info         app_info;
-} sge_vulkan_render_settings;
-
-typedef struct sge_opengl_render_settings {
-
-} sge_opengl_render_settings;
-
-typedef struct sge_directx_render_settings {
-
-} sge_directx_render_settings;
 
 typedef struct sge_render_settings {
         sge_vulkan_render_settings vulkan;
@@ -188,45 +157,12 @@ typedef struct sge_render_settings {
 
 
 
-sge_render *sge_render_create(render_api api, sge_window *window);
+sge_render *sge_render_create(SGE_RENDER_API api, sge_window *window);
 SGE_RESULT sge_render_initialize(sge_render *render, sge_render_settings *settings);
 
 SGE_RESULT sge_draw_frame(sge_render *render);
-SGE_RESULT sge_begin_frame(sge_render *render);
-SGE_RESULT sge_draw(sge_render *render, sge_renderable *renderable, sge_pipeline *pipeline);
-SGE_RESULT sge_end_frame(sge_render *render);
-
-//sge_mesh *sge_mesh_create(sge_render *render, void *vertices, uint32_t vertex_size, uint32_t vertex_count, uint32_t *indices, uint32_t index_count, sge_vertex_format *format);
-//sge_shader *sge_shader_create();
-sge_renderable *sge_renderable_create(sge_mesh *mesh, sge_material *material);
-//sge_pipeline *get_default_pipeline();
-//sge_pipeline *sge_pipeline_create();
-//SGE_RESULT sge_render_shutdown(sge_render *render);
-
-
-SGE_RESULT sge_move_forward(sge_render *render);
-SGE_RESULT sge_move_left(sge_render *render);
-SGE_RESULT sge_move_backwards(sge_render *render);
-SGE_RESULT sge_move_right(sge_render *render);
-
-SGE_RESULT sge_enable_mouse_movement_tracking(sge_render *render);
-SGE_RESULT sge_disable_mouse_movement_tracking(sge_render *render);
-
-
-
-sge_mesh *create_logo_mesh(sge_render *render);
-sge_renderable *create_logo_renderable(sge_render *render);
-
 
 sge_renderable *create_renderable_from_rend_file(sge_render *render, SGE_REND_FILE *file);
 
-
-SGE_RESULT sge_create_buffer(sge_render *render, void **buffer_ptr);
-SGE_RESULT sge_allocate_buffer(sge_render *render, void **memory_ptr, void *buffer);
-SGE_RESULT sge_create_descriptor_pool(sge_render *render, void *pool_ptr);
-SGE_RESULT sge_allocate_descriptor_set(sge_render *render, void *descriptor_ptr, void *layout_ptr, void *descriptor_pool);
-SGE_RESULT sge_update_descriptor_set(sge_render *render, sge_uniform_buffer_type *buffer);
-
-SGE_RESULT sge_renderable_create_api_resources(sge_render *render, sge_renderable *renderable);
 #endif //SGE_RENDER_H
 

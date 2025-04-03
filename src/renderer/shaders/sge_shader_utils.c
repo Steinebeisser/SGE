@@ -91,7 +91,7 @@ char *sge_get_vertex_shader_path_for_format(sge_render *render, sge_vertex_forma
 
         char file_ending[16] = "vert";
 
-        if (render->api == RENDER_API_VULKAN) {
+        if (render->api == SGE_RENDER_API_VULKAN) {
                 strcat(file_ending, ".spv");
         } else {
                 log_internal_event(LOG_LEVEL_FATAL, "unknown api");
@@ -150,7 +150,7 @@ char *sge_get_fragment_shader_path_for_format(sge_render *render, sge_vertex_for
 
         char file_ending[16] = "frag";
 
-        if (render->api == RENDER_API_VULKAN) {
+        if (render->api == SGE_RENDER_API_VULKAN) {
                 strcat(file_ending, ".spv");
         } else {
                 log_internal_event(LOG_LEVEL_FATAL, "unknown api");
@@ -463,9 +463,9 @@ SGE_RESULT create_raw_shader_file(char *filepath, char *filename, sge_vertex_for
 }
 
 SGE_RESULT compile_shader_file(char *uncompiled_shader_file_path, sge_render *render) {
-        render_api api = render->api;
+        SGE_RENDER_API api = render->api;
 
-        if (api == RENDER_API_VULKAN) {
+        if (api == SGE_RENDER_API_VULKAN) {
                 char spv_path[1024] = {0};
                 snprintf(spv_path, sizeof(spv_path), "%s.spv", uncompiled_shader_file_path);
 
