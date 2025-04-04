@@ -10,6 +10,7 @@ The SGE Utils Module provides utility functions for handling program termination
    1.2 [shutdown_program](#void-shutdown_program)  
    1.3 [sort_linked_list](#void-sort_linked_list)
 2. [Examples](#examples)
+   2.1 [Sort a Linked List](#sorting-linked-list)
 
 ## API Reference
 
