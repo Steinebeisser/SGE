@@ -132,14 +132,6 @@ SGE_RESULT sge_camera_rotate_z(sge_render *render, sge_region *move_region, floa
         return SGE_SUCCESS;
 }
 
-SGE_RESULT sge_camera_lock_mouse(sge_render *render) {
-        hide_mouse(render);
-}
-
-SGE_RESULT sge_camera_unlock_mouse(sge_render *render) {
-        show_mouse(render);
-}
-
 SGE_RESULT sge_update_uniform_buffer(sge_render *render, sge_region *region) {
         if (!render->sge_interface->update_uniform(render, region)) {
                 return SGE_ERROR;
