@@ -138,11 +138,11 @@ int main(void) {
 
         sge_movement_settings movement_settings_horizontal = {
                 .mode = ROTATE_PITCH_AND_YAW,
-                .delta_speed = 0.5,
+                .delta_speed = 0.5f,
         };
         sge_movement_settings left_right = {
                 .mode = ROTATE_YAW_ONLY,
-                .delta_speed = 0.5,
+                .delta_speed = 0.5f,
         };
         sge_movement_settings sprint_settings_horizontal = {
                 .mode = ROTATE_PITCH_AND_YAW,
@@ -150,14 +150,14 @@ int main(void) {
         };
         sge_movement_settings movement_settings_vertical = {
                 .mode = ROTATE_NONE,
-                .delta_speed = 0.2
+                .delta_speed = 0.2f
         };
 
 
 
 
 
-        //SGE_REND_SECTION sections[2];
+        //sge_rend_section sections[2];
 //
         //strncpy(sections[0].section_header.name, "MESHI MESH", sizeof(sections[1].section_header.name) - 1);
         //sections[0].section_header.name[sizeof(sections[1].section_header.name) - 1] = '\0';
@@ -195,7 +195,7 @@ int main(void) {
         //memcpy(sections[1].data, blueColor, sections[1].section_header.data_size);
 
 
-        SGE_MESH_ATTRIBUTE attributes[2] = {
+        sge_mesh_attribute attributes[2] = {
                 {
                         .type = SGE_ATTRIBUTE_POSITION,
                         .format = SGE_FORMAT_FLOAT32,
@@ -246,7 +246,7 @@ int main(void) {
                 { .position = { 0.0f, -1.0f,  0.0f}, .color = {255, 255, 255, 255} },
                 { .position = {-0.5f, 0.0f, -0.5f}, .color = {255, 0, 0, 255} },
         };
-        SGE_REND_SECTION *triangle_test_mesh_section = sge_create_mesh_section(
+        sge_rend_section *triangle_test_mesh_section = sge_create_mesh_section(
                 "test triangle",
                 vertices,
                 18,
@@ -257,7 +257,7 @@ int main(void) {
                 0
         );
 
-        SGE_REND_SECTION sections[] = { *triangle_test_mesh_section };
+        sge_rend_section sections[] = { *triangle_test_mesh_section };
 
         SGE_RESULT result = sge_rend_save("test", sections, 1);
         if (result != SGE_SUCCESS) {
@@ -271,15 +271,15 @@ int main(void) {
         create_healthbar();
 
 
-        SGE_REND_FILE *cube_file = NULL;
-        SGE_REND_FILE *pyramid_file = NULL;
-        SGE_REND_FILE *healthbar_file = NULL;
+        sge_rend_file *cube_file = NULL;
+        sge_rend_file *pyramid_file = NULL;
+        sge_rend_file *healthbar_file = NULL;
         sge_rend_load("cube.sgerend", &cube_file);
         sge_rend_load("test.sgerend", &pyramid_file);
         sge_rend_load("healthbar.sgerend", &healthbar_file);
 
         //for (int i = 0; i < file->header.section_count; ++i) {
-        //        SGE_REND_SECTION *section = &file->sections[i];
+        //        sge_rend_section *section = &file->sections[i];
         //        printf("Section %d (type: %d, size: %zu bytes):\n",
         //               i, section->section_header.type, section->section_header.data_size);
 
@@ -324,12 +324,12 @@ int main(void) {
                 //        active_region = NULL;
                 //}
                 int regions_count;
-                sge_region **active_regions = sge_region_get_active_list(render, &regions_count);
-                        printf("%d\n", regions_count);
-                for (int i = 0; i < regions_count; ++i) {
-                        sge_region *region = active_regions[i];
-                        printf("Region Type: %d\n", region->type);
-                }
+                //sge_region **active_regions = sge_region_get_active_list(render, &regions_count);
+                //printf("%d\n", regions_count);
+                //for (int i = 0; i < regions_count; ++i) {
+                //        sge_region *region = active_regions[i];
+                //        printf("Region Type: %d\n", region->type);
+                //}
 
                 //for (int i = 0; i < regions_count; ++i) {
                 //        printf("ACTIVE REGIONS: %i\n", i);
@@ -460,7 +460,7 @@ int main(void) {
 
 void create_cube() {
 //GPT created
-        SGE_MESH_ATTRIBUTE attributes[2] = {
+        sge_mesh_attribute attributes[2] = {
         {
             .type = SGE_ATTRIBUTE_POSITION,
             .format = SGE_FORMAT_FLOAT32,
@@ -532,7 +532,7 @@ void create_cube() {
     };
 
     // Create the mesh section
-    SGE_REND_SECTION *cube_mesh_section = sge_create_mesh_section(
+    sge_rend_section *cube_mesh_section = sge_create_mesh_section(
         "test cube",    // Name of the mesh
         vertices,       // Vertex data
         36,             // Number of vertices
@@ -544,7 +544,7 @@ void create_cube() {
     );
 
     // Prepare the sections array and save the mesh
-    SGE_REND_SECTION sections[] = { *cube_mesh_section };
+    sge_rend_section sections[] = { *cube_mesh_section };
 
     SGE_RESULT result = sge_rend_save("cube", sections, 1);
     if (result != SGE_SUCCESS) {
@@ -561,7 +561,7 @@ void create_healthbar() {
                 uint8_t color[4];
         } UIColoredVertex;
 
-        SGE_MESH_ATTRIBUTE attributes[2] = {
+        sge_mesh_attribute attributes[2] = {
         {
             .type = SGE_ATTRIBUTE_POSITION,
             .format = SGE_FORMAT_FLOAT32,
@@ -587,7 +587,7 @@ void create_healthbar() {
         };
 
     // Create mesh section
-    SGE_REND_SECTION *health_bar_section = sge_create_mesh_section(
+    sge_rend_section *health_bar_section = sge_create_mesh_section(
         "health bar",
         healthbar_vertices,
         6,
@@ -599,7 +599,7 @@ void create_healthbar() {
     );
 
     // Save (optional)
-    SGE_REND_SECTION sections[] = { *health_bar_section };
+    sge_rend_section sections[] = { *health_bar_section };
     SGE_RESULT result = sge_rend_save("healthbar", sections, 1);
     if (result != SGE_SUCCESS) {
         fprintf(stderr, "Failed to save render file\n");
