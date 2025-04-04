@@ -66,7 +66,4 @@ SGE_RESULT sge_camera_rotate_x(sge_render *render, sge_region *move_region, floa
 SGE_RESULT sge_camera_rotate_y(sge_render *render, sge_region *move_region, float angle);
 SGE_RESULT sge_camera_rotate_z(sge_render *render, sge_region *move_region, float angle);
 
-SGE_RESULT sge_update_uniform_buffer(sge_render *render, sge_region *region);
-
-
 #endif //SGE_CAMERA_H

@@ -6,6 +6,7 @@
 
 #include "sge_vulkan_swapchain.h"
 #include "core/sge_internal_logging.h"
+#include "renderer/sge_internal_render.h"
 
 SGE_RESULT handle_resize_out_of_date(sge_render *render) {
         log_internal_event(LOG_LEVEL_INFO, "Handling Resize/Out of Date");
