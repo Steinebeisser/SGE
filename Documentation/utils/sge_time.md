@@ -10,7 +10,6 @@
     1.3 [get_current_year](#int-get_current_year) <br>
     1.4 [get_current_month](#int-get_current_month) <br>
     1.5 [get_current_day](#int-get_current_day) <br>
-2. [Examples](#examples)
 
 ## API Reference
 
