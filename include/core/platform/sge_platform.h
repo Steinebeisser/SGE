@@ -6,8 +6,6 @@
 #define SGE_PLATFORM_H
 #include <stdint.h>
 
-char *get_cwd();
-
 void os_sleep(uint32_t sleep_time);
 
 #endif //SGE_PLATFORM_H
