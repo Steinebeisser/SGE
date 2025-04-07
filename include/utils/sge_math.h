@@ -32,7 +32,6 @@ vec3 sge_vec3_rotate_pitch(vec3 vector, vec3 rotation);
 vec3 sge_vec3_rotate_yaw(vec3 vector1, vec3 rotation);
 
 
-void sge_m4_get_view_matrix(m4 matrix, vec3 left_vec3, vec3, vec3 up_vec3, vec3 vec3_forward_vec3, vec3 translation);
 void sge_m4_set_identity(m4 matrix);
 void sge_m4_set_value(m4 matrix, int row, int col, float value);
 float sge_m4_get_value(m4 matrix, int row, int col);
