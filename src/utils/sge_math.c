@@ -14,6 +14,11 @@
 
 int amount_chars_in_float(float num);
 
+
+////////////////////
+// VEC3 Functions //
+////////////////////
+
 vec3 sge_vec3_add(const vec3 a, const vec3 b) {
         const vec3 result = {a.x + b.x, a.y + b.y, a.z + b.z};
         return result;
@@ -92,19 +97,9 @@ vec3 sge_vec3_rotate_yaw(vec3 vector, vec3 rotation) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-void sge_m4_get_view_matrix(m4 matrix, vec3 left_vec3, vec3, vec3 up_vec3, vec3 vec3_forward_vec3, vec3 translation) {
-
-}
+//////////////////
+// M4 functions //
+//////////////////
 
 void sge_m4_set_identity(m4 matrix) {
         for (int i = 0; i < 4; i++) {
