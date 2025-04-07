@@ -4,9 +4,10 @@
 
 #ifndef SGE_TIME_H
 #define SGE_TIME_H
+#include <stdint.h>
 
 char* current_time_formatted(void);
-int get_current_ms_time(void);
+uint64_t get_current_ms_time(void);
 int get_current_year(void);
 int get_current_month(void);
 int get_current_day(void);
