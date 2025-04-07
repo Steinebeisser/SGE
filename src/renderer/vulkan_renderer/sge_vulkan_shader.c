@@ -12,7 +12,7 @@
 #include <stdio.h>
 
 char* get_shader_path(const char* shader_name) {
-        char *base_dir = get_cwd();
+        char *base_dir = get_current_working_directory();
         if (base_dir == NULL) {
                 log_internal_event(LOG_LEVEL_FATAL, "Failed to get base dir");
         }

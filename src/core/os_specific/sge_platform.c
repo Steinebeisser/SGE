@@ -11,21 +11,6 @@
 #include "core/sge_internal_logging.h"
 #include "core/memory_control.h"
 
-char *get_cwd() {
-        char *filepath = allocate_memory(512, MEMORY_TAG_INPUT);
-        if (filepath == NULL) {
-                log_internal_event(LOG_LEVEL_FATAL, "FAiled to allocate Memory");
-        }
-#ifdef WIN32
-        #include <windows.h>
-        GetCurrentDirectory(512, filepath);
-#elif UNIX
-        getcwd(filepath, 512);
-#endif
-
-        return filepath;
-}
-
 void os_sleep(uint32_t sleep_time_ms) {
 #ifdef WIN32
         Sleep(sleep_time_ms);
