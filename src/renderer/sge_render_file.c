@@ -5,6 +5,7 @@
 #include "renderer/sge_render_file.h"
 
 #include <stdio.h>
+#include <utils/hash/crc32.h>
 
 #include "sge_types.h"
 #include "sge_version.h"
@@ -12,17 +13,7 @@
 #include "core/memory_control.h"
 
 
-uint32_t calculate_crc32(void *data, size_t length) {
-        uint32_t crc = 0xFFFFFFFF;
-        uint8_t *bytes = (uint8_t *)data;
 
-        for (size_t i = 0; i < length; i++) {
-                uint8_t byte = bytes[i];
-                crc = (crc >> 8) ^ crc32_table[(crc & 0xFF) ^ byte];
-        }
-
-        return crc ^ 0xFFFFFFFF;
-}
 
 SGE_RESULT sge_rend_save(char *filename, sge_rend_section *sections, uint16_t section_count) {
         char save_filename[256];
