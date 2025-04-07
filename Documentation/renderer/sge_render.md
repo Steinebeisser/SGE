@@ -106,7 +106,7 @@ typedef struct sge_mesh {
         uint32_t                attribute_count;
         uint32_t                vertex_count;
         uint32_t                index_count;
-        SGE_MESH_ATTRIBUTE      *attributes;
+        sge_mesh_attribute      *attributes;
         sge_vertex_format       *format;
         char                    name[64];
 } sge_mesh;
@@ -275,11 +275,11 @@ typedef enum SGE_GEOMETRY_TYPE {
 
 ---
 
-### `sge_renderable *create_renderable_from_rend_file(sge_render *render, SGE_REND_FILE *file);`
+### `sge_renderable *create_renderable_from_rend_file(sge_render *render, sge_rend_file *file);`
 
 #### Parameters: 
 - `render`: Pointer to the `sge_render` instance.
-- `file`: Pointer to the `SGE_REND_FILE` structure, containing a render object
+- `file`: Pointer to the `sge_rend_file` structure, containing a render object
 
 #### Returns: 
 - Pointer to a `sge_renderable` struct that can be used to add into a Region to render it
