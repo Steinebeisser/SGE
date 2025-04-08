@@ -7,6 +7,7 @@
 #include "utils/sge_time.h"
 
 #include <windows.h>
+#include <core/memory_control.h>
 
 char *current_time_formatted(void) {
         char static current_time_formatted[50];
@@ -21,8 +22,18 @@ char *current_time_formatted(void) {
 
 uint64_t get_current_ms_time(void) {
 #ifdef WIN32
-        const uint64_t current_ms = GetTickCount64();
-        return current_ms;
+        //VALUES FROM : https://stackoverflow.com/questions/20370920/convert-current-time-from-windows-to-unix-timestamp
+        const uint64_t UNIX_EPOCH_START_TICKS = 116444736000000000ULL;
+        const uint64_t TICKS_PER_MS = 10000;
+
+        FILETIME ft;
+        GetSystemTimeAsFileTime(&ft);
+
+        ULARGE_INTEGER uli;
+        uli.LowPart  = ft.dwLowDateTime;
+        uli.HighPart = ft.dwHighDateTime;
+
+        return (uli.QuadPart - UNIX_EPOCH_START_TICKS) / TICKS_PER_MS;
 #elif UNIX
         struct timeval tv;
 
