@@ -74,15 +74,22 @@ E = Extension Data Size <br>
 
 #### Section Data
 
+SSS     = SGEREND source size   = if (include type = 0) { 2 Bytes } else { 4 Bytes }            <br>
+SS      = SGEREND source        = Size of SGEREND source                                        <br>
+SDS     = Section Data size     = if (addition section count > 0 ) { 4 Byte} else { 0 Byte }    <br>
+SD      = Section Data          = Size of Section Data                                          <br>
 
-| Offset | Size                     | Name                     | Description                                            |
-|:-------|:-------------------------|:-------------------------|:-------------------------------------------------------|
-| +0x00  | 1 Byte                   | Include Type             | 0 for external file, 1 for embedded                    |
-| 0x01   | 2 Byte                   | Additional Section Count | If loading SGEREND file option to add section types    |
-| 0x03   | Variable                 | SGEREND Ref/Data         | Path to SGEREND file or full Data                      |
-| 0x..   | Variable x Section Count | Section Data             | If section COunt > 0, include it in here               |
-| 0x..   | 2 byte                   | Transformation Flags     | Flags of [transformation flags](#transformation-flags) |
-| 0x..   | Variable                 | Transformations Data     | Data based on flags                                    |
+
+| Offset                     | Size                        | Name                     | Description                                                              |
+|:---------------------------|:----------------------------|:-------------------------|:-------------------------------------------------------------------------|
+| +0x00                      | 1 Byte                      | Include Type             | 0 for external file, 1 for embedded                                      |
+| 0x01                       | 2 Byte                      | Additional Section Count | If loading SGEREND file option to add section types                      |
+| 0x03                       | 2 Byte / 4 Byte if embedded | SGEREND source size      | If the Include Type is embedded increase the Size to 4 Bytes, normally 2 |
+| 0x03 + SSS                 | S Bytes                     | SGEREND Source           | Path to SGEREND file or full Data                                        |
+| 0x03 + SSS + SS            | if sec count > 0, 4 Byte    | Section Data Size        | Fills up `SD Bytes` and `SDS Bytes`                                      |
+| 0x03 + SSS + SS + SDS      | SD Bytes                    | Section Data             |                                                                          |
+| 0x03 + SSS + SS + SDS + SD | 2 byte                      | Transformation Flags     | Flags of [transformation flags](#transformation-flags)                   |
+| 0x05 + SSS + SS + SDS + SD | Variable                    | Transformations Data     | Data based on flags                                                      |
 
 #### Transformation Flags
 
