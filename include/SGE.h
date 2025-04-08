@@ -19,6 +19,8 @@
 #include "utils/sge_file.h"
 #include "utils/sge_string.h"
 
+#include "utils/hash/crc32.h"
+
 
 #include "core/memory_control.h"
 #include "core/logging.h"

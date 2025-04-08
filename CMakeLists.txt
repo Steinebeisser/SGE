@@ -44,10 +44,8 @@ add_library(SGE STATIC
         src/sge_version.c
         src/renderer/vulkan_renderer/sge_vulkan_memory.c
         src/core/sge_internal_logging.c
-        include/renderer/apis/sge_opengl.h
-        include/renderer/apis/sge_directx.h
         src/renderer/sge_internal_render.c
-        src/renderer/sge_internal_render.h
+        src/utils/hash/crc32.c
 )
 
 

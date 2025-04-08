@@ -19,10 +19,20 @@ char *current_time_formatted(void) {
         return current_time_formatted;
 }
 
-int get_current_ms_time(void) {
-        const DWORD current_ms = GetTickCount64();
+uint64_t get_current_ms_time(void) {
+#ifdef WIN32
+        const uint64_t current_ms = GetTickCount64();
         return current_ms;
+#elif UNIX
+        struct timeval tv;
+
+        gettimeofday(&tv,NULL);
+        return (((long long)tv.tv_sec)*1000)+(tv.tv_usec/1000);
+#else
+        return 0;
+#endif
 }
+
 
 int get_current_year(void) {
         const time_t now = time(NULL);
