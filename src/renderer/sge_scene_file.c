@@ -11,10 +11,74 @@
 #include <core/sge_internal_logging.h>
 #include <utils/sge_file.h>
 #include <utils/sge_time.h>
+#include <utils/sge_utils.h>
 #include <utils/hash/crc32.h>
 
 
-SGE_RESULT sge_scene_save(char *filename, sge_scene_header *scene_header, sge_scene_section *sections) {
+sge_scene *sge_scene_create(char *scene_name, char *author_name, char *description) {
+        sge_scene *scene = allocate_memory(sizeof(sge_scene), MEMORY_TAG_SCENE);
+        if (!scene) {
+                allocation_error();
+                return NULL;
+        }
+
+        scene->header.author_name = allocate_memory(strlen(author_name), MEMORY_TAG_SCENE);
+        if (!scene->header.author_name) {
+                allocation_error();
+                return NULL;
+        }
+        copy_memory(scene->header.author_name, author_name, strlen(author_name), 0, 0);
+        scene->header.author_name_size = strlen(author_name);
+        scene->header.creation_date_timestamp = get_current_ms_time();
+        scene->header.last_modified_date_timestamp = get_current_ms_time();
+        scene->header.description = NULL;
+        scene->header.description_size = 0;
+        scene->header.header_extension_count = 0;
+        scene->header.header_extensions = NULL;
+        scene->header.header_extension_size = 0;
+        scene->header.scene_name = allocate_memory(strlen(scene_name), MEMORY_TAG_SCENE);
+        if (!scene->header.scene_name) {
+                allocation_error();
+                return NULL;
+        }
+        copy_memory(scene->header.scene_name, scene_name, strlen(scene_name), 0, 0);
+        scene->header.scene_name_size = strlen(scene_name);
+        scene->header.section_count = 0;
+
+        scene->sections = NULL;
+
+        return scene;
+}
+void sge_hexdump(const void *data, size_t size) {
+        const uint8_t *byte_data = (const uint8_t *)data;
+
+        for (size_t i = 0; i < size; i += 16) {
+                printf("%08zx  ", i); // Print offset
+
+                // Print hex bytes
+                for (size_t j = 0; j < 16; ++j) {
+                        if (i + j < size) {
+                                printf("%02x ", byte_data[i + j]);
+                        } else {
+                                printf("   "); // padding
+                        }
+                }
+
+                printf(" ");
+
+                // Print ASCII representation
+                for (size_t j = 0; j < 16 && i + j < size; ++j) {
+                        uint8_t c = byte_data[i + j];
+                        printf("%c", isprint(c) ? c : '.');
+                }
+
+                printf("\n");
+        }
+}
+SGE_RESULT sge_scene_save(char *filename, sge_scene *scene) {
+        if (!filename || !scene) {
+                return SGE_INVALID_API_CALL;
+        }
         char save_filename[512];
         zero_memory(save_filename, sizeof(save_filename), 0);
         strcat(save_filename, filename);
@@ -33,15 +97,14 @@ SGE_RESULT sge_scene_save(char *filename, sge_scene_header *scene_header, sge_sc
         uint16_t minor_version = current_version.minor;
         uint16_t patch_version = current_version.patch;
 
-        void *global_header = allocate_memory(SGE_SCENE_HEADER_FIXED_SIZE + scene_header->header_extension_size + scene_header->scene_name_size + scene_header->author_name_size + scene_header->description_size, MEMORY_TAG_RENDERER);
+        void *global_header = allocate_memory(SGE_SCENE_HEADER_FIXED_SIZE + scene->header.header_extension_size + scene->header.scene_name_size + scene->header.author_name_size + scene->header.description_size, MEMORY_TAG_RENDERER);
         if (global_header == NULL) {
                 log_internal_event(LOG_LEVEL_FATAL, "FAiled to allocate for file save header");
                 return SGE_ERROR_FAILED_ALLOCATION;
         }
 
-
         size_t file_offset = 0;
-
+        log_event(LOG_LEVEL_DEBUG, "starting scene global header");
         //GLOBAL HEADER                                                                                                                               //
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         copy_memory(global_header, SGE_SCENE_MAGIC_NUMBER, sizeof(SGE_SCENE_MAGIC_NUMBER), file_offset, 0);                                             //
@@ -54,38 +117,40 @@ SGE_RESULT sge_scene_save(char *filename, sge_scene_header *scene_header, sge_sc
         copy_memory(global_header, &patch_version, sizeof(uint16_t), file_offset, 0);                                                                 //
         file_offset += sizeof(patch_version);                                                                                                         //
         //SECTION                                                                                                                                     //
-        copy_memory(global_header, &scene_header->section_count, sizeof(uint32_t), file_offset, 0);                                                                 //
-        file_offset += sizeof(scene_header->section_count);
+        copy_memory(global_header, &scene->header.section_count, sizeof(uint32_t), file_offset, 0);                                                                 //
+        file_offset += sizeof(scene->header.section_count);
         //SCENE NAME
-        copy_memory(global_header, &scene_header->scene_name_size, sizeof(uint32_t), file_offset, 0);
-        file_offset += sizeof(scene_header->scene_name_size);
-        copy_memory(global_header, scene_header->scene_name, scene_header->scene_name_size, file_offset, 0);
-        file_offset += scene_header->scene_name_size;
+        copy_memory(global_header, &scene->header.scene_name_size, sizeof(uint32_t), file_offset, 0);
+        file_offset += sizeof(scene->header.scene_name_size);
+        copy_memory(global_header, scene->header.scene_name, scene->header.scene_name_size, file_offset, 0);
+        file_offset += scene->header.scene_name_size;
         //AUTHOR NAME
-        copy_memory(global_header, &scene_header->author_name_size, sizeof(uint32_t), file_offset, 0);
-        file_offset += sizeof(scene_header->author_name_size);
-        copy_memory(global_header, scene_header->author_name, scene_header->author_name_size, file_offset, 0);
-        file_offset += scene_header->author_name_size;
+        copy_memory(global_header, &scene->header.author_name_size, sizeof(uint32_t), file_offset, 0);
+        file_offset += sizeof(scene->header.author_name_size);
+        copy_memory(global_header, scene->header.author_name, scene->header.author_name_size, file_offset, 0);
+        file_offset += scene->header.author_name_size;
         //Timestamps
-        copy_memory(global_header, &scene_header->creation_date_timestamp, sizeof(uint64_t), file_offset, 0);
-        file_offset += sizeof(scene_header->creation_date_timestamp);
-        copy_memory(global_header, &scene_header->last_modified_date_timestamp, sizeof(uint64_t), file_offset, 0);
-        file_offset += sizeof(&scene_header->last_modified_date_timestamp);
+        copy_memory(global_header, &scene->header.creation_date_timestamp, sizeof(uint64_t), file_offset, 0);
+        file_offset += sizeof(scene->header.creation_date_timestamp);
+        copy_memory(global_header, &scene->header.last_modified_date_timestamp, sizeof(uint64_t), file_offset, 0);
+        file_offset += sizeof(scene->header.last_modified_date_timestamp);
         //DESCRIPTION
-        copy_memory(global_header, &scene_header->description_size, sizeof(uint32_t), file_offset, 0);
-        file_offset += sizeof(scene_header->description_size);
-        copy_memory(global_header, scene_header->description, scene_header->description_size, file_offset, 0);
-        file_offset += scene_header->description_size;
+        copy_memory(global_header, &scene->header.description_size, sizeof(uint32_t), file_offset, 0);
+        file_offset += sizeof(scene->header.description_size);
+        copy_memory(global_header, scene->header.description, scene->header.description_size, file_offset, 0);
+        file_offset += scene->header.description_size;
         //EXTENSIONS                                                                                                                                  //
-        copy_memory(global_header, &scene_header->header_extension_count, sizeof(uint16_t), file_offset, 0);                                                               //
-        file_offset += sizeof(scene_header->header_extension_count);                                                                                                       //
-        copy_memory(global_header, &scene_header->header_extensions, scene_header->header_extension_size, file_offset, 0);                                                                //
-        file_offset += scene_header->header_extension_size;
+        copy_memory(global_header, &scene->header.header_extension_count, sizeof(uint16_t), file_offset, 0);                                                               //
+        file_offset += sizeof(scene->header.header_extension_count);                                                                                                       //
+        copy_memory(global_header, &scene->header.header_extensions, scene->header.header_extension_size, file_offset, 0);                                                                //
+        file_offset += scene->header.header_extension_size;
         //CHECKSUM                                                                                                                                    //
         uint32_t global_header_checksum = calculate_crc32(global_header, file_offset);
         copy_memory(global_header, &global_header_checksum, sizeof(uint32_t), file_offset, 0);                                          //
         file_offset += sizeof(global_header_checksum);                                                                                                //
-        //WRITE TO FILE                                                                                                                               //
+        //WRITE TO FILE
+        //
+        log_event(LOG_LEVEL_DEBUG, "Finished global header");
         fwrite(global_header, file_offset, 1, fd);
         //FREE GLOBAL HEADER BUFFER
         free_memory(global_header, MEMORY_TAG_RENDERER);
@@ -95,26 +160,11 @@ SGE_RESULT sge_scene_save(char *filename, sge_scene_header *scene_header, sge_sc
 
 
 
-        //////////////////////////////////////////////////////////////////////////////////////////
-        ////GLOBAL HEADER                                                                       //
-        //fwrite(SGE_REND_MAGIC_NUMBER, 1, 8, fd);                                              //
-        ////VERSION                                                                             //
-        //fwrite(&major_version, sizeof(uint16_t), 1, fd);                                      //
-        //fwrite(&minor_version, sizeof(uint16_t), 1, fd);                                      //
-        //fwrite(&patch_version, sizeof(uint16_t), 1, fd);                                      //
-        ////SECTION                                                                             //
-        //fwrite(&section_count, sizeof(uint16_t), 1, fd);                                      //
-        //fwrite(&extension_count, sizeof(uint16_t), 1, fd);                                    //
-        //fwrite(&extension_data, 1 * extension_size, 1, fd);                                   //
-        //fwrite(&global_header_checksum, sizeof(uint32_t), 1, fd);                             //
-        //////////////////////////////////////////////////////////////////////////////////////////
-        //file_offset = file_offset + SGE_REND_HEADER_FIXED_SIZE + extension_size;
-        //////////////////////////////////////////////////////////////////////////////////
         //SECTIONS
-        for (int i = 0; i < scene_header->section_count; ++i) {
-                sge_scene_section section = sections[i];
+        for (int i = 0; i < scene->header.section_count; ++i) {
+                sge_scene_section section = scene->sections[i];
                 int section_buffer_offset = 0;
-                int section_header_size = SGE_SCENE_SECTION_HEADER_FIXED_SIZE + section.section_header->section_extension_size;
+                int section_header_size = section.section_header->header_size;
                 void *section_header_buffer = allocate_memory(section_header_size, MEMORY_TAG_RENDERER);
                 //TYPE
                 copy_memory(section_header_buffer, &section.section_header->sge_scene_section_type, sizeof(uint16_t), section_buffer_offset, 0);
@@ -134,10 +184,11 @@ SGE_RESULT sge_scene_save(char *filename, sge_scene_header *scene_header, sge_sc
                 copy_memory(section_header_buffer, section.section_header->section_name, section.section_header->section_name_size, section_buffer_offset, 0);
                 section_buffer_offset += section.section_header->section_name_size;
                 //TIMESTAMPS
+                //todo
                 copy_memory(section_header_buffer, &section.section_header->creation_date_timestamp, sizeof(uint64_t), file_offset, 0);
-                file_offset += sizeof(section.section_header->creation_date_timestamp);
+                section_buffer_offset += sizeof(section.section_header->creation_date_timestamp);
                 copy_memory(section_header_buffer, &section.section_header->last_modified_date_timestamp, sizeof(uint64_t), file_offset, 0);
-                file_offset += sizeof(section.section_header->last_modified_date_timestamp);
+                section_buffer_offset += sizeof(section.section_header->last_modified_date_timestamp);
                 //EXTENSIONS
                 copy_memory(section_header_buffer, &section.section_header->section_extension_count, sizeof(uint16_t), section_buffer_offset, 0);
                 section_buffer_offset += sizeof(section.section_header->section_extension_count);
@@ -151,7 +202,7 @@ SGE_RESULT sge_scene_save(char *filename, sge_scene_header *scene_header, sge_sc
                 section_buffer_offset += sizeof(section_header_checksum);
                 //printf("%i\n", section_buffer_offset);
                 //SIZE CHECK
-                if (section_buffer_offset != SGE_SCENE_SECTION_HEADER_FIXED_SIZE + section.section_header->section_extension_size) {
+                if (section_buffer_offset != section.section_header->header_size) {
                         log_internal_event(LOG_LEVEL_FATAL, "wrong section header - sgerend");
                         return SGE_ERROR;
                 }
@@ -161,8 +212,8 @@ SGE_RESULT sge_scene_save(char *filename, sge_scene_header *scene_header, sge_sc
                 free_memory(section_header_buffer, MEMORY_TAG_RENDERER);
 
                 //DATA
+                sge_hexdump(section.data, section.section_header->data_size);
                 fwrite(section.data, section.section_header->data_size, 1, fd);
-
                 //SIZE OFFSET
                 file_offset += section_buffer_offset + section.section_header->data_size;
 
@@ -178,5 +229,204 @@ SGE_RESULT sge_scene_save(char *filename, sge_scene_header *scene_header, sge_sc
         }
         fclose(fd);
 
+        return SGE_SUCCESS;
+}
+
+
+sge_scene_section *sge_scene_create_sgerend_section(
+        SGE_SCENE_SGEREND_INCLUDE_TYPE include_type,
+        char            *section_name,
+        void            *source_data,
+        size_t          source_data_size,
+        uint16_t        transformation_flags,
+        void            *transformation_data
+        ) {
+        sge_scene_section *scene_section = allocate_memory(sizeof(sge_scene_section), MEMORY_TAG_SCENE);
+        if (!scene_section) {
+                allocation_error();
+                return NULL;
+        }
+
+        sge_scene_section_header *header = allocate_memory(sizeof(sge_scene_section_header), MEMORY_TAG_SCENE);
+        if (!header) {
+                allocation_error();
+                return NULL;
+        }
+
+        header->sge_scene_section_type = SGE_SCENE_SECTION_TYPE_SGEREND;
+
+        header->section_name_size = strlen(section_name);
+        header->section_name = allocate_memory(header->section_name_size, MEMORY_TAG_SCENE);
+        if (!header->section_name) {
+                allocation_error();
+                return NULL;
+        }
+        copy_memory(header->section_name, section_name, header->section_name_size, 0, 0);
+
+        header->creation_date_timestamp = get_current_ms_time();
+        header->last_modified_date_timestamp = get_current_ms_time();
+
+        //todo configurable
+        header->section_extension_count = 0;
+        header->section_extension_size = 0;
+
+        header->section_offset = 0;
+        header->data_size = 0;
+
+        if (header->section_extension_count > 0) {
+                header->extensions = allocate_memory(header->section_extension_size, MEMORY_TAG_SCENE);
+                copy_memory(header->extensions, NULL, header->section_extension_size, 0, 0);
+        } else {
+                header->extensions = NULL;
+        }
+
+        header->crc32_checksum = calculate_crc32(header, sizeof(sge_scene_section_header) +
+                                                                header->section_extension_size +
+                                                                header->section_name_size);
+
+        //DATA
+
+        sge_scene_sgerend_section *sgerend_data = allocate_memory(sizeof(sge_scene_sgerend_section), MEMORY_TAG_SCENE);
+        if (!sgerend_data) {
+                allocation_error();
+                return NULL;
+        }
+
+        sgerend_data->include_type = include_type;
+
+        //todo make configurable
+        sgerend_data->additional_section_count = 0;
+        sgerend_data->additional_sge_rend_sections = NULL;
+        sgerend_data->section_data_size = 0;
+
+        if (sgerend_data->section_data_size > 0) {
+                //todo
+        } else {
+                sgerend_data->additional_sge_rend_sections = NULL;
+        }
+
+
+
+        if (include_type == SGE_SCENE_SGEREND_INCLUDE_TYPE_EXTERNAL) { //external file
+                sgerend_data->sgerend_source_size_non_embedded = source_data_size;
+        } else { //embedded
+                sgerend_data->sgerend_source_size_embedded = source_data_size;
+        }
+        sgerend_data->sgerend_source_data = allocate_memory(source_data_size, MEMORY_TAG_SCENE);
+        if (!sgerend_data->sgerend_source_data) {
+                allocation_error();
+                return NULL;
+        }
+        copy_memory(sgerend_data->sgerend_source_data, source_data, source_data_size, 0, 0);
+
+
+        sgerend_data->transformation_flags = transformation_flags;
+
+        size_t transformation_data_size = 0;
+        if (transformation_flags & SGE_SCENE_TRANSFORMATION_FLAG_POSITION)      transformation_data_size += sizeof(vec3);
+        if (transformation_flags & SGE_SCENE_TRANSFORMATION_FLAG_ROTATION)      transformation_data_size += sizeof(vec3);
+        if (transformation_flags & SGE_SCENE_TRANSFORMATION_FLAG_SCALE)         transformation_data_size += sizeof(vec3);
+
+        if (transformation_data_size > 0) {
+                sgerend_data->transformation_data = allocate_memory(transformation_data_size, MEMORY_TAG_RENDERER);
+                copy_memory(sgerend_data->transformation_data, transformation_data, transformation_data_size, 0, 0);
+        } else {
+                sgerend_data->transformation_data = NULL;
+        }
+
+        size_t header_size = SGE_SCENE_SECTION_HEADER_FIXED_SIZE + header->section_name_size + header->section_extension_size + sizeof(uint32_t); //checksum
+
+        size_t data_size = 0;
+        if (include_type == SGE_SCENE_SGEREND_INCLUDE_TYPE_EXTERNAL) {
+                data_size = sizeof(uint8_t) + // include
+                        sizeof(uint16_t) + //additional section count
+                        sizeof(uint16_t) + //source size
+                        source_data_size + //
+                        sizeof(uint32_t) +// additional section count
+                        sizeof(uint16_t) +//transformation flags
+                        transformation_data_size;
+        } else {
+                data_size =sizeof(uint8_t) + // include
+                        sizeof(uint16_t) + //additional section count
+                        sizeof(uint32_t) + //source size
+                        source_data_size + //
+                        sizeof(uint32_t) +// additional section count
+                        sizeof(uint16_t) +//transformation flags
+                        transformation_data_size;
+        }
+        if (sgerend_data->additional_section_count <= 0) {
+                data_size -= sizeof(uint32_t);
+        }
+        header->data_size = data_size;
+
+        uint8_t *raw_data = allocate_memory(data_size, MEMORY_TAG_SCENE);
+        if (!raw_data) {
+                allocation_error();
+                return NULL;
+        }
+
+        size_t raw_data_offset = 0;
+        copy_memory(raw_data, &sgerend_data->include_type, sizeof(uint8_t), raw_data_offset, 0);
+        raw_data_offset += sizeof(uint8_t);
+
+        copy_memory(raw_data, &sgerend_data->additional_section_count, sizeof(uint16_t), raw_data_offset, 0);
+        raw_data_offset += sizeof(uint16_t);
+
+        size_t source_data_size_raw = 0;
+        if (include_type == SGE_SCENE_SGEREND_INCLUDE_TYPE_EXTERNAL) {
+                copy_memory(raw_data, &sgerend_data->sgerend_source_size_non_embedded, sizeof(uint16_t), raw_data_offset, 0);
+                raw_data_offset += sizeof(uint16_t);
+                source_data_size_raw = sgerend_data->sgerend_source_size_non_embedded;
+        } else {
+                copy_memory(raw_data, &sgerend_data->sgerend_source_size_embedded, sizeof(uint32_t), raw_data_offset, 0);
+                raw_data_offset += sizeof(uint32_t);
+                source_data_size_raw = sgerend_data->sgerend_source_size_embedded;
+        }
+
+        copy_memory(raw_data, sgerend_data->sgerend_source_data, source_data_size_raw, raw_data_offset, 0);
+        raw_data_offset += source_data_size_raw;
+
+        if (sgerend_data->additional_section_count > 0) {
+                copy_memory(raw_data, &sgerend_data->section_data_size, sizeof(uint32_t), raw_data_offset, 0);
+                raw_data_offset += sizeof(uint32_t);
+
+                copy_memory(raw_data, sgerend_data->additional_sge_rend_sections, sgerend_data->section_data_size, raw_data_offset, 0);
+                raw_data_offset += sgerend_data->section_data_size;
+        }
+
+
+        copy_memory(raw_data, &sgerend_data->transformation_flags, sizeof(uint16_t), raw_data_offset, 0);
+        raw_data_offset += sizeof(uint16_t);
+
+        copy_memory(raw_data, sgerend_data->transformation_data, transformation_data_size,raw_data_offset, 0);
+        raw_data_offset += transformation_data_size;
+
+        if (raw_data_offset != data_size) {
+                log_event(LOG_LEVEL_FATAL, "RAW DATA OFFSET \"SGE SCENE CREATE SGEREND SECTION\"");
+                return NULL;
+        }
+
+        scene_section->section_header   = header;
+        scene_section->data             = raw_data;
+        scene_section->section_size     = header_size + data_size;
+        scene_section->section_header->header_size = header_size;
+
+        return scene_section;
+}
+
+
+SGE_RESULT sge_scene_add_section(sge_scene *scene, sge_scene_section *section) {
+        if (!scene || !section) {
+                return SGE_INVALID_API_CALL;
+        }
+
+        scene->header.section_count++;
+        scene->sections = reallocate_memory(scene->sections, sizeof(sge_scene_section) * scene->header.section_count, MEMORY_TAG_SCENE);
+        if (!scene->sections) {
+                allocation_error();
+                return SGE_ERROR_FAILED_ALLOCATION;
+        }
+
+        scene->sections[scene->header.section_count -1] = *section;
         return SGE_SUCCESS;
 }
