@@ -38,7 +38,6 @@ add_library(SGE STATIC
         src/renderer/sge_render_file.c
         src/SGE.c
         src/renderer/sge_scene_file.c
-        src/renderer/sge_scene_file.h
         src/renderer/vulkan_renderer/sge_vulkan_renderables.c
         src/renderer/shaders/sge_shader_utils.c
         src/renderer/vulkan_renderer/sge_vulkan_draw.c
