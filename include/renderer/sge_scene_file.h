@@ -17,6 +17,7 @@
 
 
 #include "sge_types.h"
+#include "sge_render_file.h"
 
 typedef enum SGE_SCENE_SECTION_TYPE {
         SGE_SCENE_SECTION_TYPE_SGEREND = 1,
@@ -51,8 +52,27 @@ typedef struct sge_scene_header {
         size_t                  header_extension_size;
 } sge_scene_header;
 
+typedef enum SGE_SCENE_SGEREND_INCLUDE_TYPE {
+        SGE_SCENE_SGEREND_INCLUDE_TYPE_EXTERNAL = 0,
+        SGE_SCENE_SGEREND_INCLUDE_TYPE_EMBEDDED = 1,
+} SGE_SCENE_SGEREND_INCLUDE_TYPE;
+
+typedef struct sge_scene_sgerend_section {
+        uint8_t                 include_type; //SGE_SCENE_SGEREND_INCLUDE_TYPE
+        uint16_t                additional_section_count;
+        union {
+                uint16_t        sgerend_source_size_non_embedded; //if filepath
+                uint32_t        sgerend_source_size_embedded; //if embedded
+        };
+        void                    *sgerend_source_data;
+        uint32_t                section_data_size;      //only used if additional section count > 0
+        sge_rend_section        *additional_sge_rend_sections;
+        uint16_t                transformation_flags; //SGE_SCENE_TRANSFORMATION_FLAGS
+        void                    *transformation_data;
+} sge_scene_sgerend_section;
+
 typedef struct sge_scene_section_header {
-        SGE_SCENE_SECTION_TYPE  sge_scene_section_type;
+        uint16_t                sge_scene_section_type; //SGE_SCENE_SECTION_TYPE, but force to 2 byte
         uint64_t                section_offset;
         uint64_t                data_size;
         uint32_t                section_name_size;
@@ -63,24 +83,40 @@ typedef struct sge_scene_section_header {
         size_t                  section_extension_size;
         sge_scene_extension     *extensions;
         uint32_t                crc32_checksum;
+        size_t                  header_size;
 } sge_scene_section_header;
 
 typedef struct sge_scene_section {
-        sge_scene_section_header        *section_header;
-        void                            *data;
+        sge_scene_section_header       *section_header;
+        void                           *data;
+        size_t                         section_size;
 } sge_scene_section;
 
-typedef struct sge_scene_file {
-        sge_scene_header         header;
-        sge_scene_section        *sections;
-} sge_scene_file;
+typedef struct sge_scene {
+        sge_scene_header        header;
+        sge_scene_section       *sections;
+} sge_scene;
 
 typedef struct sge_scene_settings {
         char    *filename;
 
 } sge_scene_settings;
 
-SGE_RESULT sge_scene_save(char *filename, sge_scene_header *scene_header, sge_scene_section *sections);
+sge_scene *sge_scene_create(char *scene_name, char *author_name, char *description);
 
+
+sge_scene_section *sge_scene_create_sgerend_section(
+                        SGE_SCENE_SGEREND_INCLUDE_TYPE include_type,
+                        char            *section_name,
+                        void            *source_data,
+                        size_t          source_data_size,
+                        uint16_t        transformation_flags,
+                        void            *transformation_data);
+
+
+SGE_RESULT sge_scene_add_section(sge_scene *scene, sge_scene_section *section);
+
+
+SGE_RESULT sge_scene_save(char *filename, sge_scene *scene);
 
 #endif //SGE_SCENE_FILE_H
