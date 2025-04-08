@@ -30,6 +30,7 @@
 
 #include "renderer/sge_render.h"
 #include "renderer/sge_render_file.h"
+#include "renderer/sge_scene_file.h"
 #include "renderer/sge_camera.h"
 #include "renderer/sge_region.h"
 
