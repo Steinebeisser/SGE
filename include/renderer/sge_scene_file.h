@@ -38,6 +38,9 @@ typedef struct sge_scene_extension {
 } sge_scene_extension;
 
 typedef struct sge_scene_header {
+        uint16_t                major_version;
+        uint16_t                minor_version;
+        uint16_t                patch_version;
         uint32_t                section_count;
         uint32_t                scene_name_size;
         char                    *scene_name;
@@ -50,6 +53,7 @@ typedef struct sge_scene_header {
         uint16_t                header_extension_count;
         sge_scene_extension     *header_extensions;
         size_t                  header_extension_size;
+        uint32_t                crc32_checksum;
 } sge_scene_header;
 
 typedef enum SGE_SCENE_SGEREND_INCLUDE_TYPE {
@@ -71,6 +75,10 @@ typedef struct sge_scene_sgerend_section {
         void                    *transformation_data;
 } sge_scene_sgerend_section;
 
+typedef union sge_scene_section_data {
+        sge_scene_sgerend_section       *sgerend;
+} sge_scene_section_data;
+
 typedef struct sge_scene_section_header {
         uint16_t                sge_scene_section_type; //SGE_SCENE_SECTION_TYPE, but force to 2 byte
         uint64_t                section_offset;
@@ -87,9 +95,9 @@ typedef struct sge_scene_section_header {
 } sge_scene_section_header;
 
 typedef struct sge_scene_section {
-        sge_scene_section_header       *section_header;
-        void                           *data;
-        size_t                         section_size;
+        sge_scene_section_header        *section_header;
+        void                            *data;
+        sge_scene_section_data          parsed_data;
 } sge_scene_section;
 
 typedef struct sge_scene {
@@ -118,5 +126,8 @@ SGE_RESULT sge_scene_add_section(sge_scene *scene, sge_scene_section *section);
 
 
 SGE_RESULT sge_scene_save(char *filename, sge_scene *scene);
+sge_scene *sge_scene_load(char *filename);
+
+SGE_RESULT sge_scene_parse_sgerend_section(sge_scene_section_data *parsed_output, void *data, size_t data_size);
 
 #endif //SGE_SCENE_FILE_H

@@ -75,6 +75,7 @@ void sge_hexdump(const void *data, size_t size) {
                 printf("\n");
         }
 }
+
 SGE_RESULT sge_scene_save(char *filename, sge_scene *scene) {
         if (!filename || !scene) {
                 return SGE_INVALID_API_CALL;
@@ -232,6 +233,411 @@ SGE_RESULT sge_scene_save(char *filename, sge_scene *scene) {
         return SGE_SUCCESS;
 }
 
+
+sge_scene *sge_scene_load(char *filename) {
+        char *function_name = "sge_scene_load";
+        if (!filename) {
+                log_event(LOG_LEVEL_ERROR, "\"%s\", invalid api call", function_name);
+                return NULL;
+        }
+
+        FILE *fd = fopen(filename, "rb");
+        if (!fd) {
+                log_event(LOG_LEVEL_ERROR, "\"%s\", failed to open file", function_name);
+                return NULL;
+        }
+
+        sge_scene *scene = allocate_memory(sizeof(sge_scene), MEMORY_TAG_SCENE);
+        if (!scene) {
+                allocation_error();
+                return NULL;
+        }
+
+        sge_scene_header *scene_header = &scene->header;
+        if (!scene_header) {
+                allocation_error();
+                return NULL;
+        }
+
+        char magic_number[8];
+        if (fread(magic_number, 8, 1, fd) != 1) {
+                log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read magic number", function_name);
+                return NULL;
+        }
+
+        if (strcmp(magic_number, SGE_SCENE_MAGIC_NUMBER) != 0) {
+                log_event(LOG_LEVEL_ERROR, "\"%s\", magic number doesnt match", function_name);
+                return NULL;
+        }
+
+        if (fread(&scene_header->major_version, sizeof(uint16_t), 1, fd) != 1) {
+                log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read version", function_name);
+                return NULL;
+        }
+
+        if (fread(&scene_header->minor_version, sizeof(uint16_t), 1, fd) != 1) {
+                log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read version", function_name);
+                return NULL;
+        }
+
+        if (fread(&scene_header->patch_version, sizeof(uint16_t), 1, fd) != 1) {
+                log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read version", function_name);
+                return NULL;
+        }
+
+        if (fread(&scene_header->section_count, sizeof(uint32_t), 1, fd) != 1) {
+                log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read section_count", function_name);
+                return NULL;
+        }
+
+        if (fread(&scene_header->scene_name_size, sizeof(uint32_t), 1, fd) != 1) {
+                log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read scene name size", function_name);
+                return NULL;
+        }
+
+        if (scene_header->scene_name_size > 0) {
+                scene_header->scene_name = allocate_memory(scene_header->scene_name_size+1, MEMORY_TAG_SCENE);
+                if (!scene_header->scene_name) {
+                        allocation_error();
+                        return NULL;
+                }
+
+                if (fread(scene_header->scene_name, scene_header->scene_name_size, 1, fd) != 1) {
+                        log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read scene name", function_name);
+                        return NULL;
+                }
+                scene_header->scene_name[scene_header->scene_name_size] = '\0';
+        }
+
+
+        if (fread(&scene_header->author_name_size, sizeof(uint32_t), 1, fd) != 1) {
+                log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read author name size", function_name);
+                return NULL;
+        }
+
+        if (scene_header->author_name_size > 0) {
+                scene_header->author_name = allocate_memory(scene_header->author_name_size + 1, MEMORY_TAG_SCENE);
+                if (!scene_header->author_name) {
+                        allocation_error();
+                        return NULL;
+                }
+
+                if (fread(scene_header->author_name , scene_header->author_name_size , 1, fd) != 1) {
+                        log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read author name", function_name);
+                        return NULL;
+                }
+
+                scene_header->author_name[scene_header->author_name_size] = '\0';
+        }
+
+
+        if (fread(&scene_header->creation_date_timestamp, sizeof(uint64_t), 1, fd) != 1) {
+                log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read timestamp", function_name);
+                return NULL;
+        }
+
+        if (fread(&scene_header->last_modified_date_timestamp, sizeof(uint64_t), 1, fd) != 1) {
+                log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read timestamp", function_name);
+                return NULL;
+        }
+
+
+        if (fread(&scene_header->description_size, sizeof(uint32_t), 1, fd) != 1) {
+                log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read description size", function_name);
+                return NULL;
+        }
+
+        if (scene_header->description_size > 0) {
+                scene_header->description = allocate_memory(scene_header->description_size + 1, MEMORY_TAG_SCENE);
+                if (!scene_header->description) {
+                        allocation_error();
+                        return NULL;
+                }
+
+                if (fread(scene_header->description , scene_header->description_size , 1, fd) != 1) {
+                        log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read description", function_name);
+                        return NULL;
+                }
+
+                scene_header->description[scene_header->description_size] = '\0';
+        }
+
+
+        if (fread(&scene_header->header_extension_count , sizeof(uint16_t), 1, fd) != 1) {
+                log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read header extension count", function_name);
+                return NULL;
+        }
+
+        if (scene_header->header_extension_count > 0) {
+                log_event(LOG_LEVEL_WARNING, "extensions in use but no supported for now");
+                scene_header->header_extensions = allocate_memory( sizeof(sge_scene_extension) * scene_header->header_extension_count, MEMORY_TAG_SCENE);
+                if (!scene_header->header_extensions) {
+                        allocation_error();
+                        return NULL;
+                }
+        }
+
+        for (int i = 0; i < scene_header->header_extension_count; ++i) {
+               sge_scene_extension *extension = &scene_header->header_extensions[i];
+                if (!extension) {
+                        log_event(LOG_LEVEL_ERROR, "failed to grab extension pointer");
+                        return NULL;
+                }
+
+                if (fread(&extension->type, sizeof(uint16_t), 1, fd) != 1) {
+                        log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read header extension type", function_name);
+                        return NULL;
+                }
+
+                if (fread(&extension->data_size, sizeof(uint32_t), 1, fd) != 1) {
+                        log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read header extension size", function_name);
+                        return NULL;
+                }
+
+                extension->data = allocate_memory(extension->data_size, MEMORY_TAG_SCENE);
+                if (!extension->data) {
+                        allocation_error();
+                        return NULL;
+                }
+
+                if (fread(&extension->data, extension->data_size, 1, fd) != 1) {
+                        log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read header extension data", function_name);
+                        return NULL;
+                }
+        }
+
+        if (fread(&scene_header->crc32_checksum, sizeof(uint32_t), 1, fd) != 1) {
+                log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read header checksum", function_name);
+                return NULL;
+        }
+
+        log_event(LOG_LEVEL_INFO, "Finished reading scene header, Found %d Sections and %d Extensions, Author is %s", scene_header->section_count, scene_header->header_extension_count, scene_header->author_name);
+
+
+        if (scene_header->section_count > 0) {
+                scene->sections = allocate_memory(sizeof(sge_scene_section), MEMORY_TAG_SCENE);
+                if (!scene->sections) {
+                        allocation_error();
+                        return NULL;
+                }
+        }
+        for (int i = 0; i < scene_header->section_count; ++i) {
+                sge_scene_section *section = &scene->sections[i];
+                if (!section) {
+                        log_event(LOG_LEVEL_ERROR, "Failed to grab section pointer");
+                        return NULL;
+                }
+
+                sge_scene_section_header *section_header = allocate_memory(sizeof(sge_scene_section_header), MEMORY_TAG_SCENE);
+                if (!section_header) {
+                        allocation_error();
+                        return NULL;
+                }
+
+                if (fread(&section_header->sge_scene_section_type, sizeof(uint16_t), 1, fd) != 1) {
+                        log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read section header type", function_name);
+                        return NULL;
+                }
+
+                if (fread(&section_header->section_offset, sizeof(uint64_t), 1, fd) != 1) {
+                        log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read section offset", function_name);
+                        return NULL;
+                }
+
+                if (fread(&section_header->data_size, sizeof(uint64_t), 1, fd) != 1) {
+                        log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read section data size", function_name);
+                        return NULL;
+                }
+
+                if (fread(&section_header->section_name_size, sizeof(uint32_t), 1, fd) != 1) {
+                        log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read section name size", function_name);
+                        return NULL;
+                }
+
+                printf("SECTION NAME SIZE: %d\n", section_header->section_name_size);
+                if (section_header->section_name_size > 0) {
+                        section_header->section_name = allocate_memory(section_header->section_name_size + 1, MEMORY_TAG_SCENE);
+                        if (!section_header->section_name) {
+                                allocation_error();
+                                return NULL;
+                        }
+
+                        if (fread(section_header->section_name, section_header->section_name_size,1, fd) != 1) {
+                                log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read section name", function_name);
+                                return NULL;
+                        }
+
+                        section_header->section_name[section_header->section_name_size] = '\0';
+                }
+
+
+                if (fread(&section_header->creation_date_timestamp, sizeof(uint64_t), 1, fd) != 1) {
+                        log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read timestamp", function_name);
+                        return NULL;
+                }
+
+                if (fread(&section_header->last_modified_date_timestamp, sizeof(uint64_t), 1, fd) != 1) {
+                        log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read timestamp", function_name);
+                        return NULL;
+                }
+
+
+                if (fread(&section_header->section_extension_count , sizeof(uint16_t), 1, fd) != 1) {
+                        log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read header extension count", function_name);
+                        return NULL;
+                }
+
+                if (section_header->section_extension_count > 0) {
+                        log_event(LOG_LEVEL_WARNING, "extensions in use but no supported for now");
+                        section_header->extensions = allocate_memory( sizeof(sge_scene_extension) * section_header->section_extension_count, MEMORY_TAG_SCENE);
+                        if (!section_header->extensions) {
+                                allocation_error();
+                                return NULL;
+                        }
+                }
+
+                for (int j = 0; j < section_header->section_extension_count; ++j) {
+                        sge_scene_extension *extension = &section_header->extensions[j];
+                        if (!extension) {
+                                log_event(LOG_LEVEL_ERROR, "failed to grab extension pointer");
+                                return NULL;
+                        }
+
+                        if (fread(&extension->type, sizeof(uint16_t), 1, fd) != 1) {
+                                log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read header extension type", function_name);
+                                return NULL;
+                        }
+
+                        if (fread(&extension->data_size, sizeof(uint32_t), 1, fd) != 1) {
+                                log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read header extension size", function_name);
+                                return NULL;
+                        }
+
+                        extension->data = allocate_memory(extension->data_size, MEMORY_TAG_SCENE);
+                        if (!extension->data) {
+                                allocation_error();
+                                return NULL;
+                        }
+
+                        if (fread(&extension->data, extension->data_size, 1, fd) != 1) {
+                                log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read header extension data", function_name);
+                                return NULL;
+                        }
+                }
+
+                if (fread(&section_header->crc32_checksum, sizeof(uint32_t), 1, fd) != 1) {
+                        log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read header checksum", function_name);
+                        return NULL;
+                }
+
+                log_event(LOG_LEVEL_INFO, "Read section header, Type: %d, Extension Count: %d, Name: %s", section_header->sge_scene_section_type, section_header->section_extension_count, section_header->section_name);
+
+                section->data = allocate_memory(section_header->data_size, MEMORY_TAG_SCENE);
+                if (!section->data) {
+                        allocation_error();
+                        return NULL;
+                }
+
+                if (fread(section->data, section_header->data_size, 1, fd) != 1) {
+                        log_event(LOG_LEVEL_ERROR, "\"%s\", failed to read section data", function_name);
+                        return NULL;
+                }
+
+                //PARSING DATA
+                switch (section_header->sge_scene_section_type) {
+                        case SGE_SCENE_SECTION_TYPE_SGEREND: {
+                                if (sge_scene_parse_sgerend_section(&section->parsed_data, section->data, section_header->data_size) != SGE_SUCCESS) {
+                                        log_event(LOG_LEVEL_ERROR, "\"%s\", failed to parse section data", function_name);
+                                        return NULL;
+                                }
+                                printf("INCLUDE TYPE: %d\n", section->parsed_data.sgerend->include_type);
+                                if (section->parsed_data.sgerend->include_type == SGE_SCENE_SGEREND_INCLUDE_TYPE_EXTERNAL) {
+                                        sge_hexdump(section->parsed_data.sgerend->sgerend_source_data, section->parsed_data.sgerend->sgerend_source_size_non_embedded);
+                                        printf("SOURCE PATH: %s\n", (char*)section->parsed_data.sgerend->sgerend_source_data);
+                                }
+                        } break;
+                        default: {
+                                log_event(LOG_LEVEL_WARNING, "\"%s\", unknown section type, cant parse data", function_name);
+                        };
+                }
+
+
+                section->section_header = section_header;
+        }
+        fclose(fd);
+        return scene;
+}
+
+SGE_RESULT sge_scene_parse_sgerend_section(sge_scene_section_data *parsed_output, void *data, size_t data_size) {
+        sge_scene_sgerend_section *sgerend_data = allocate_memory(sizeof(sge_scene_sgerend_section), MEMORY_TAG_SCENE);
+        if (!sgerend_data) {
+                allocation_error();
+                return SGE_ERROR_FAILED_ALLOCATION;
+        }
+
+        size_t data_offset = 0;
+        copy_memory(&sgerend_data->include_type, data, sizeof(uint8_t), 0, data_offset);
+        data_offset += sizeof(uint8_t);
+
+        copy_memory(&sgerend_data->additional_section_count, data, sizeof(uint16_t), 0, data_offset);
+        data_offset += sizeof(uint16_t);
+
+        size_t source_data_size = 0;
+        SGE_BOOL is_string = SGE_FALSE;
+        if (sgerend_data->include_type == SGE_SCENE_SGEREND_INCLUDE_TYPE_EXTERNAL) {
+                copy_memory(&sgerend_data->sgerend_source_size_non_embedded, data, sizeof(uint16_t), 0, data_offset);
+                data_offset += sizeof(uint16_t);
+                source_data_size = sgerend_data->sgerend_source_size_non_embedded;
+                is_string = SGE_TRUE;
+        } else {
+                copy_memory(&sgerend_data->sgerend_source_size_embedded, data, sizeof(uint32_t), 0, data_offset);
+                data_offset += sizeof(uint32_t);
+                source_data_size = sgerend_data->sgerend_source_size_embedded;
+        }
+
+        sgerend_data->sgerend_source_data = allocate_memory(source_data_size + is_string, MEMORY_TAG_SCENE);
+        if (!sgerend_data->sgerend_source_data) {
+                allocation_error();
+                return SGE_ERROR_FAILED_ALLOCATION;
+        }
+
+        copy_memory(sgerend_data->sgerend_source_data, data, source_data_size, 0, data_offset);
+        if (is_string) {
+                ((char*)sgerend_data->sgerend_source_data)[source_data_size + 1] = '\0';
+        }
+
+        data_offset += source_data_size;
+
+        if (sgerend_data->additional_section_count > 0) {
+                copy_memory(&sgerend_data->section_data_size, data, sizeof(uint32_t), 0, data_offset);
+                data_offset += sizeof(uint32_t);
+
+                copy_memory(sgerend_data->additional_sge_rend_sections, data, sgerend_data->section_data_size, 0, data_offset);
+                data_offset += sgerend_data->section_data_size;
+        }
+
+        copy_memory(&sgerend_data->transformation_flags, data, sizeof(uint16_t), 0, data_offset);
+        data_offset += sizeof(uint16_t);
+
+        uint16_t transformation_flag_size = 0;
+        if (sgerend_data->transformation_flags & SGE_SCENE_TRANSFORMATION_FLAG_POSITION) transformation_flag_size += SGE_TRANSFORMATION_POSITION_SIZE;
+        if (sgerend_data->transformation_flags & SGE_SCENE_TRANSFORMATION_FLAG_ROTATION) transformation_flag_size += SGE_TRANSFORMATION_ROTATION_SIZE;
+        if (sgerend_data->transformation_flags & SGE_SCENE_TRANSFORMATION_FLAG_SCALE) transformation_flag_size += SGE_TRANSFORMATION_SCALE_SIZE;
+
+        if (transformation_flag_size > 0) {
+                copy_memory(sgerend_data->transformation_data, data, transformation_flag_size, 0, data_offset);
+                data_offset += transformation_flag_size;
+        }
+
+        if (data_offset != data_size) {
+                log_event(LOG_LEVEL_ERROR, "Failed to parse, different offset than given");
+                return SGE_ERROR;
+        }
+
+        parsed_output->sgerend = sgerend_data;
+
+        return SGE_SUCCESS;
+}
 
 sge_scene_section *sge_scene_create_sgerend_section(
         SGE_SCENE_SGEREND_INCLUDE_TYPE include_type,
@@ -408,7 +814,6 @@ sge_scene_section *sge_scene_create_sgerend_section(
 
         scene_section->section_header   = header;
         scene_section->data             = raw_data;
-        scene_section->section_size     = header_size + data_size;
         scene_section->section_header->header_size = header_size;
 
         return scene_section;
