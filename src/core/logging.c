@@ -4,8 +4,6 @@
 
 #include "core/logging.h"
 
-#include <bemapiset.h>
-#include <math.h>
 #include <stdarg.h>
 #include <stdbool.h>
 
@@ -48,7 +46,7 @@ SGE_RESULT start_logger(sge_log_settings settings) {
         level_padding = get_longest_element_in_array(log_levels);
         log_internal_event(LOG_LEVEL_INFO, "Initializing Logger");
         log_buffer = allocate_memory(LOG_BUFFER_SIZE, MEMORY_TAG_LOGGER);
-        started_logging = TRUE;
+        started_logging = SGE_TRUE;
         log_internal_event(LOG_LEVEL_INFO, "Log started");
         char filename[100];
         char filepath[200];
@@ -98,7 +96,7 @@ SGE_RESULT start_logger(sge_log_settings settings) {
         strcat(filepath, "\\");
         strcat(filepath, filename);
         //printf("PATH: %s\n", filepath);
-        log_file_filepath = allocate_memory(strlen(filepath), MEMORY_TAG_LOGGER);
+        log_file_filepath = allocate_memory(strlen(filepath) + 1, MEMORY_TAG_LOGGER);
         strcpy(log_file_filepath, filepath);
         log_file = fopen(filepath, "w");
         if (log_file == NULL) {
@@ -150,7 +148,7 @@ void log_event(const log_level level, const char *message, ...) {
         }
 
         if (is_release) {
-                if (level != LOG_LEVEL_ERROR || level != LOG_LEVEL_FATAL || level != LOG_LEVEL_WARNING) {
+                if (level != LOG_LEVEL_ERROR) {
                         return;
                 }
         }
