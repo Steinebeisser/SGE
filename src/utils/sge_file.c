@@ -14,8 +14,9 @@
 
 #ifdef WIN32
 #include <windows.h>
+#include <direct.h>
 #define create_dir(path) CreateDirectory(path, NULL)
-#define get_cwd() _getcwd(NULL, 0)
+#define get_cwd(buffer, size) _getcwd(buffer, size)
 #else
 #ifdef Unix
 #include <unistd.h>
@@ -69,7 +70,7 @@ SGE_BOOL create_directory_if_not_exists(char *dir_path) {
 }
 
 char *get_current_working_directory() {
-        char *current_working_directory = getcwd(NULL, 0);
+        char *current_working_directory = get_cwd(NULL, 0);
         //printf("%s\n", current_working_directory);
 
         return current_working_directory;

@@ -12,9 +12,11 @@
 char *current_time_formatted(void) {
         char static current_time_formatted[50];
         time_t now = time(NULL);
-        struct tm *tm_info = localtime(&now);
+        struct tm tm_info;
+        localtime_s(&tm_info, &now);
 
-        strftime(current_time_formatted, sizeof(current_time_formatted), "%d.%m.%Y %H:%M:%S", tm_info);
+
+        strftime(current_time_formatted, sizeof(current_time_formatted), "%d.%m.%Y %H:%M:%S", &tm_info);
         //printf("%s\n", current_time_formatted);
 
         return current_time_formatted;
@@ -46,22 +48,22 @@ uint64_t get_current_ms_time(void) {
 
 
 int get_current_year(void) {
-        const time_t now = time(NULL);
-        const struct tm *tm_info = localtime(&now);
-
-        return tm_info->tm_year + 1900;
+        time_t now = time(NULL);
+        struct tm tm_info;
+        localtime_s(&tm_info, &now);
+        return tm_info.tm_year + 1900;
 }
 
 int get_current_month(void) {
-        const time_t now = time(NULL);
-        const struct tm *tm_info = localtime(&now);
-
-        return tm_info->tm_mon + 1;
+        time_t now = time(NULL);
+        struct tm tm_info;
+        localtime_s(&tm_info, &now);
+        return tm_info.tm_mon + 1;
 }
 
 int get_current_day(void) {
-        const time_t now = time(NULL);
-        const struct tm *tm_info = localtime(&now);
-
-        return tm_info->tm_mday;
+        time_t now = time(NULL);
+        struct tm tm_info;
+        localtime_s(&tm_info, &now);
+        return tm_info.tm_mday;
 }

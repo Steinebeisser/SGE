@@ -5,7 +5,6 @@
 #include "core/platform/sge_platform.h"
 
 #include <stdint.h>
-#include <unistd.h>
 
 #include "core/platform/sge_window.h"
 #include "core/sge_internal_logging.h"
@@ -15,6 +14,7 @@ void os_sleep(uint32_t sleep_time_ms) {
 #ifdef WIN32
         Sleep(sleep_time_ms);
 #elif UNIX
+        #include <unistd.h>
         log_internal_event(LOG_LEVEL_FATAL, "no unix support for sleep (os_utils.c");
 #else
         log_internal_event(LOG_LEVEL_FATAL, "unsupported sleep (os_utils.c");
