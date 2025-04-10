@@ -429,7 +429,7 @@ int main(void) {
                 update_frame(target_fps, start_time, window);
                 //timeEndPeriod(1);
                 //printf("REACHED LOOP END, REPEATING");
-                if (frame_count == 1) {
+                if (frame_count == 999999) {
                         log_event(LOG_LEVEL_INFO, "UPDATING WIN MODE");
                         if (!secondary_screen) {
                                 terminate_program();

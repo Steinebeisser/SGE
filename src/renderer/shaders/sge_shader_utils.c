@@ -344,7 +344,7 @@ SGE_RESULT create_raw_shader_file(char *filepath, char *filename, sge_vertex_for
 
                         strcat(layout_string, ";\n");
 
-                        fprintf(fd, layout_string);
+                        fprintf(fd, "%s", layout_string);
                 }
 
                 char main_string[256] = {0};
@@ -397,7 +397,7 @@ SGE_RESULT create_raw_shader_file(char *filepath, char *filename, sge_vertex_for
 
                 strcat(main_string, "}\n");
 
-                fprintf(fd, main_string);
+                fprintf(fd, "%s", main_string);
 
         } else if (is_frag) {
                 fprintf(fd, "#version 450\n\n");
@@ -438,7 +438,7 @@ SGE_RESULT create_raw_shader_file(char *filepath, char *filename, sge_vertex_for
                                 }
 
                                 strcat(layout_string, ";\n");
-                                fprintf(fd, layout_string);
+                                fprintf(fd, "%s", layout_string);
                         }
 
                         fprintf(fd, "layout(location = 0) out vec4 outColor;\n\n");
