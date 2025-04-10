@@ -45,11 +45,11 @@ void *get_next_allocation_memory_tag_usage(const void *node);
 
 void *allocate_memory(const size_t size, const memory_tag tag) {
         void *ptr = malloc(size);
-        zero_memory(ptr, size, 0);
         if (!ptr) {
                 log_internal_event(LOG_LEVEL_ERROR, "Failed allocating Memory");
                 return NULL;
         }
+        zero_memory(ptr, size, 0);
 
         allocation_info *info = malloc(sizeof(allocation_info));
         if (!info) {
@@ -191,12 +191,12 @@ void free_memory(void *ptr,const memory_tag tag) {
 
 
                         char tracker_memory_message[256];
-                        snprintf(tracker_memory_message, sizeof(tracker_memory_message), "Memory Tracker now uses %d Bytes of Memory",
+                        snprintf(tracker_memory_message, sizeof(tracker_memory_message), "Memory Tracker now uses %zu Bytes of Memory",
                                 tracker_memory_usage);
                         //log_internal_event(LOG_LEVEL_INFO, tracker_memory_message);
 
                         char total_memory_usage_message[256];
-                        snprintf(total_memory_usage_message, sizeof(total_memory_usage_message), "Total Memory Used: %d",
+                        snprintf(total_memory_usage_message, sizeof(total_memory_usage_message), "Total Memory Used: %zu",
                                 total_memory_usage);
                         //log_internal_event(LOG_LEVEL_INFO, total_memory_usage_message);
 
@@ -292,10 +292,10 @@ void print_memory_usage_str() {
         "--------------------------------------------------\n"
              "|              Current Memory Usage              |\n"
              "--------------------------------------------------\n"
-             "| Total Usage   | %d %-*s |\n"
+             "| Total Usage   | %zu %-*s |\n"
              "--------------------------------------------------\n", total_memory_usage, 48-15-5-amount_chars_in_int(total_memory_usage), "Bytes");
         snprintf(memory_usage_str + strlen(memory_usage_str), sizeof(memory_usage_str),
-                "| Tracker Usage | %d %-*s |\n"
+                "| Tracker Usage | %zu %-*s |\n"
                 "--------------------------------------------------\n", tracker_memory_usage, 48-15-5-amount_chars_in_int(tracker_memory_usage), "Bytes");
 
         copy_memory_tag_usage_tracker = memory_tag_usage_tracker; // todo actually copy/duplicate linked list
