@@ -7,5 +7,5 @@
 #include <stdint.h>
 
 void os_sleep(uint32_t sleep_time);
-
+void safe_strcpy();
 #endif //SGE_PLATFORM_H
