@@ -152,7 +152,7 @@ void set_window_title(HWND hwnd, char *title, ...) {
 
 LRESULT CALLBACK wndProc(const HWND hwnd, const UINT uMsg, const WPARAM wparam, const LPARAM lparam) {
         sge_window *window = (sge_window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-        int border_size = 3;
+        int border_size = 6;
         switch (uMsg) { https://learn.microsoft.com/de-de/windows/win32/winmsg
                 case WM_CLOSE:
                         is_window_open = 0;
@@ -428,7 +428,7 @@ sge_window *sge_window_create(const char *window_name, sge_window_create_setting
         if (RegisterClass(&wc) == 0) {
                 const DWORD last_error = GetLastError();
                 char error_message[256];
-                snprintf(error_message, sizeof(error_message), "Failed to Register window Class. Error. %dw", last_error);
+                snprintf(error_message, sizeof(error_message), "Failed to Register window Class. Error. %lu", last_error);
                 log_internal_event(LOG_LEVEL_FATAL, error_message);
         }
 
@@ -532,7 +532,7 @@ sge_window *sge_window_create(const char *window_name, sge_window_create_setting
                 printf("hwnd is Null");
                 const DWORD last_error = GetLastError();
                 char error_message[256];
-                snprintf(error_message, sizeof(error_message), "Failed to create Window. Error. %dw", last_error);
+                snprintf(error_message, sizeof(error_message), "Failed to create Window. Error. %lu", last_error);
                 log_internal_event(LOG_LEVEL_FATAL, error_message);
         }
 

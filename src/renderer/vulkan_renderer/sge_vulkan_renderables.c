@@ -124,7 +124,7 @@ SGE_RESULT sge_vulkan_create_renderable_resources(sge_render *render, sge_render
                                 .cull_mode = SGE_CULL_MODE_NONE,
                                 .front_face = SGE_FRONT_FACE_COUNTER_CLOCKWISE,
                                 .is_3d = is_3d,
-                                .polygon_mode = SGE_POLYGON_MODE_FILL
+                                .polygon_mode = SGE_POLYGON_MODE_LINE
                         };
 
                         sge_vulkan_pipeline_settings *vulkan_settings = transform_pipeline_settings_to_vulkan_specific(&settings);
