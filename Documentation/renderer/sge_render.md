@@ -109,6 +109,7 @@ typedef struct sge_mesh {
         sge_mesh_attribute      *attributes;
         sge_vertex_format       *format;
         char                    name[64];
+        void                    *memory_handle; 
 } sge_mesh;
 ```
 
@@ -180,6 +181,7 @@ typedef struct sge_renderer_interface {
         SGE_RESULT (*allocate_descriptor_set)(sge_render *render, void *descriptor_ptr, void *layout_ptr, void *descriptor_pool);
         SGE_RESULT (*update_descriptor_set)(sge_render *render, sge_uniform_buffer_type *buffer);
         SGE_RESULT (*create_renderable_resources)(sge_render *render, sge_renderable *renderable);
+        SGE_RESULT (*update_renderable_resources)(sge_render *render, sge_renderable *renderable); 
 } sge_renderer_interface;
 ```
 

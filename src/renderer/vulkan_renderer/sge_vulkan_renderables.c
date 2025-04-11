@@ -94,6 +94,8 @@ SGE_RESULT sge_vulkan_create_renderable_resources(sge_render *render, sge_render
 
         vkUnmapMemory(vk_context->device, vertex_memory);
 
+        renderable->mesh->memory_handle = vertex_memory;
+
         mesh->vertex_buffer.api_handle = vertex_buffer;
 
         if (mesh->format) {
@@ -124,7 +126,7 @@ SGE_RESULT sge_vulkan_create_renderable_resources(sge_render *render, sge_render
                                 .cull_mode = SGE_CULL_MODE_NONE,
                                 .front_face = SGE_FRONT_FACE_COUNTER_CLOCKWISE,
                                 .is_3d = is_3d,
-                                .polygon_mode = SGE_POLYGON_MODE_LINE
+                                .polygon_mode = SGE_POLYGON_MODE_LINE,
                         };
 
                         sge_vulkan_pipeline_settings *vulkan_settings = transform_pipeline_settings_to_vulkan_specific(&settings);
@@ -153,6 +155,34 @@ SGE_RESULT sge_vulkan_create_renderable_resources(sge_render *render, sge_render
                 //idk
         }
 
+
+        return SGE_SUCCESS;
+}
+
+SGE_RESULT sge_vulkan_update_renderable_resources(sge_render *render, sge_renderable *renderable) {
+        sge_vulkan_context *vk_context = render->api_context;
+        VkBuffer vertex_buffer = renderable->mesh->vertex_buffer.api_handle;
+        if (!vertex_buffer) {
+                log_internal_event(LOG_LEVEL_ERROR, "tried updating vertex buffer but none existed");
+                return SGE_ERROR;
+        }
+
+        VkDeviceMemory vertex_memory = renderable->mesh->memory_handle;
+        if (!vertex_memory) {
+                log_internal_event(LOG_LEVEL_ERROR, "No vertex memory handle found for renderable");
+                return SGE_ERROR;
+        }
+
+        void *mapped_data;
+        if (vkMapMemory(vk_context->device, vertex_memory, 0, renderable->mesh->vertex_buffer.size, 0, &mapped_data) != VK_SUCCESS) {
+
+                log_internal_event(LOG_LEVEL_ERROR, "Failed to map vertex buffer memory for update");
+                return SGE_ERROR;
+        }
+
+        memcpy(mapped_data, renderable->mesh->vertex_buffer.data, renderable->mesh->vertex_buffer.size);
+
+        vkUnmapMemory(vk_context->device, vertex_memory);
 
         return SGE_SUCCESS;
 }
