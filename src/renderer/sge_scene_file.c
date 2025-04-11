@@ -164,8 +164,8 @@ SGE_RESULT sge_scene_save(char *filename, sge_scene *scene) {
         //SECTIONS
         for (int i = 0; i < scene->header.section_count; ++i) {
                 sge_scene_section section = scene->sections[i];
-                int section_buffer_offset = 0;
-                int section_header_size = section.section_header->header_size;
+                uint32_t section_buffer_offset = 0;
+                size_t section_header_size = section.section_header->header_size;
                 void *section_header_buffer = allocate_memory(section_header_size, MEMORY_TAG_RENDERER);
                 //TYPE
                 copy_memory(section_header_buffer, &section.section_header->sge_scene_section_type, sizeof(uint16_t), section_buffer_offset, 0);
@@ -186,9 +186,9 @@ SGE_RESULT sge_scene_save(char *filename, sge_scene *scene) {
                 section_buffer_offset += section.section_header->section_name_size;
                 //TIMESTAMPS
                 //todo
-                copy_memory(section_header_buffer, &section.section_header->creation_date_timestamp, sizeof(uint64_t), file_offset, 0);
+                copy_memory(section_header_buffer, &section.section_header->creation_date_timestamp, sizeof(uint64_t), section_buffer_offset, 0);
                 section_buffer_offset += sizeof(section.section_header->creation_date_timestamp);
-                copy_memory(section_header_buffer, &section.section_header->last_modified_date_timestamp, sizeof(uint64_t), file_offset, 0);
+                copy_memory(section_header_buffer, &section.section_header->last_modified_date_timestamp, sizeof(uint64_t), section_buffer_offset, 0);
                 section_buffer_offset += sizeof(section.section_header->last_modified_date_timestamp);
                 //EXTENSIONS
                 copy_memory(section_header_buffer, &section.section_header->section_extension_count, sizeof(uint16_t), section_buffer_offset, 0);
@@ -415,7 +415,7 @@ sge_scene *sge_scene_load(char *filename) {
 
 
         if (scene_header->section_count > 0) {
-                scene->sections = allocate_memory(sizeof(sge_scene_section), MEMORY_TAG_SCENE);
+                scene->sections = allocate_memory(sizeof(sge_scene_section) * scene_header->section_count, MEMORY_TAG_SCENE);
                 if (!scene->sections) {
                         allocation_error();
                         return NULL;
@@ -532,6 +532,7 @@ sge_scene *sge_scene_load(char *filename) {
 
                 log_event(LOG_LEVEL_INFO, "Read section header, Type: %d, Extension Count: %d, Name: %s", section_header->sge_scene_section_type, section_header->section_extension_count, section_header->section_name);
 
+                //printf("DATA SIZE: %llu\n", section_header->data_size);
                 section->data = allocate_memory(section_header->data_size, MEMORY_TAG_SCENE);
                 if (!section->data) {
                         allocation_error();
@@ -550,11 +551,9 @@ sge_scene *sge_scene_load(char *filename) {
                                         log_event(LOG_LEVEL_ERROR, "\"%s\", failed to parse section data", function_name);
                                         return NULL;
                                 }
-                                printf("INCLUDE TYPE: %d\n", section->parsed_data.sgerend->include_type);
-                                if (section->parsed_data.sgerend->include_type == SGE_SCENE_SGEREND_INCLUDE_TYPE_EXTERNAL) {
-                                        sge_hexdump(section->parsed_data.sgerend->sgerend_source_data, section->parsed_data.sgerend->sgerend_source_size_non_embedded);
-                                        printf("SOURCE PATH: %s\n", (char*)section->parsed_data.sgerend->sgerend_source_data);
-                                }
+                                //if (section->parsed_data->sgerend->include_type == SGE_SCENE_SGEREND_INCLUDE_TYPE_EXTERNAL) {
+                                //        sge_hexdump(section->parsed_data->sgerend->sgerend_source_data, section->parsed_data->sgerend->sgerend_source_size_non_embedded);
+                                //}
                         } break;
                         default: {
                                 log_event(LOG_LEVEL_WARNING, "\"%s\", unknown section type, cant parse data", function_name);
@@ -569,6 +568,8 @@ sge_scene *sge_scene_load(char *filename) {
 }
 
 SGE_RESULT sge_scene_parse_sgerend_section(sge_scene_section_data *parsed_output, void *data, size_t data_size) {
+SGE_RESULT sge_scene_parse_sgerend_section(sge_scene_section_data **parsed_output, void *data, size_t data_size) {
+        *parsed_output = NULL;
         sge_scene_sgerend_section *sgerend_data = allocate_memory(sizeof(sge_scene_sgerend_section), MEMORY_TAG_SCENE);
         if (!sgerend_data) {
                 allocation_error();
@@ -595,6 +596,7 @@ SGE_RESULT sge_scene_parse_sgerend_section(sge_scene_section_data *parsed_output
                 source_data_size = sgerend_data->sgerend_source_size_embedded;
         }
 
+        //printf("SOURCE DATA SIZE: %llu, IS_STRING %d\n", data_size, is_string);
         sgerend_data->sgerend_source_data = allocate_memory(source_data_size + is_string, MEMORY_TAG_SCENE);
         if (!sgerend_data->sgerend_source_data) {
                 allocation_error();
@@ -603,7 +605,7 @@ SGE_RESULT sge_scene_parse_sgerend_section(sge_scene_section_data *parsed_output
 
         copy_memory(sgerend_data->sgerend_source_data, data, source_data_size, 0, data_offset);
         if (is_string) {
-                ((char*)sgerend_data->sgerend_source_data)[source_data_size + 1] = '\0';
+                ((char*)sgerend_data->sgerend_source_data)[source_data_size] = '\0';
         }
 
         data_offset += source_data_size;
@@ -625,7 +627,14 @@ SGE_RESULT sge_scene_parse_sgerend_section(sge_scene_section_data *parsed_output
         if (sgerend_data->transformation_flags & SGE_SCENE_TRANSFORMATION_FLAG_SCALE) transformation_flag_size += SGE_TRANSFORMATION_SCALE_SIZE;
 
         if (transformation_flag_size > 0) {
+                //printf("TRANSFO DATA SIZE: %d\n", transformation_flag_size);
+                sgerend_data->transformation_data = allocate_memory(transformation_flag_size, MEMORY_TAG_SCENE);
+                if (!sgerend_data->transformation_data) {
+                        allocation_error();
+                        return SGE_ERROR_FAILED_ALLOCATION;
+                }
                 copy_memory(sgerend_data->transformation_data, data, transformation_flag_size, 0, data_offset);
+                //sge_hexdump(sgerend_data->transformation_data, transformation_flag_size);
                 data_offset += transformation_flag_size;
         }
 
@@ -634,7 +643,12 @@ SGE_RESULT sge_scene_parse_sgerend_section(sge_scene_section_data *parsed_output
                 return SGE_ERROR;
         }
 
-        parsed_output->sgerend = sgerend_data;
+        *parsed_output = allocate_memory(sizeof(sge_scene_section_data), MEMORY_TAG_SCENE);
+        if (!*parsed_output) {
+                allocation_error();
+                return SGE_ERROR_FAILED_ALLOCATION;
+        }
+        (*parsed_output)->sgerend = sgerend_data;
 
         return SGE_SUCCESS;
 }
@@ -686,9 +700,7 @@ sge_scene_section *sge_scene_create_sgerend_section(
                 header->extensions = NULL;
         }
 
-        header->crc32_checksum = calculate_crc32(header, sizeof(sge_scene_section_header) +
-                                                                header->section_extension_size +
-                                                                header->section_name_size);
+        header->crc32_checksum = calculate_crc32(source_data, source_data_size - sizeof(uint32_t));
 
         //DATA
 
@@ -740,7 +752,7 @@ sge_scene_section *sge_scene_create_sgerend_section(
                 sgerend_data->transformation_data = NULL;
         }
 
-        size_t header_size = SGE_SCENE_SECTION_HEADER_FIXED_SIZE + header->section_name_size + header->section_extension_size + sizeof(uint32_t); //checksum
+        size_t header_size = SGE_SCENE_SECTION_HEADER_FIXED_SIZE + header->section_name_size + header->section_extension_size;
 
         size_t data_size = 0;
         if (include_type == SGE_SCENE_SGEREND_INCLUDE_TYPE_EXTERNAL) {
