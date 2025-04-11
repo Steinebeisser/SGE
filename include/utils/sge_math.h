@@ -43,9 +43,12 @@ void sge_m4_set_rotate_z(m4 matrix, float angle);
 void sge_m4_multiply(m4 m_result, m4 m_a, m4 m_b);
 void sge_m4_transpose(m4 matrix);
 void sge_m4_set_rotate(m4 matrix, vec3 rotation);
-void sge_m4_print(m4 matrix);
 vec4 sge_m4_transform_vec4(m4 matrix, vec4 vec);
+void sge_m4_copy(m4 m_to_copy, m4 m_from_copy);
 
+void sge_m4_print(m4 matrix);
+void sge_vec4_print(vec4 vector);
+void sge_vec3_print(vec3 vector);
 
 size_t squared(size_t num);
 

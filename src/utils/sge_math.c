@@ -188,6 +188,15 @@ void sge_m4_multiply(m4 m_result, m4 m_a, m4 m_b) {
         }
 }
 
+void sge_m4_copy(m4 m_to_copy, m4 m_from_copy) {
+        for (int i = 0; i < 4; i++) {
+                for (int j = 0; j < 4; j++) {
+                        m_to_copy[i][j] = m_from_copy[i][j];
+                }
+        }
+
+}
+
 void sge_m4_transpose(m4 matrix) {
         for (int i = 0; i < 4; i++) {
                 for (int j = i + 1; j < 4; j++) {
@@ -257,6 +266,23 @@ vec4 sge_m4_transform_vec4(m4 matrix, vec4 vec) {
         result.z = matrix[2][0] * vec.x + matrix[2][1] * vec.y + matrix[2][2] * vec.z + matrix[2][3] * vec.a;
         result.a = matrix[3][0] * vec.x + matrix[3][1] * vec.y + matrix[3][2] * vec.z + matrix[3][3] * vec.a;
         return result;
+}
+
+void sge_vec4_print(vec4 vector) {
+        printf("-------\n");
+        printf("| %4.2f |\n", vector.x);
+        printf("| %4.2f |\n", vector.y);
+        printf("| %4.2f |\n", vector.z);
+        printf("| %4.2f |\n", vector.a);
+        printf("-------\n");
+}
+
+void sge_vec3_print(vec3 vector) {
+        printf("-------\n");
+        printf("| %4.2f |\n", vector.x);
+        printf("| %4.2f |\n", vector.y);
+        printf("| %4.2f |\n", vector.z);
+        printf("-------\n");
 }
 
 int amount_chars_in_float(float num) {
