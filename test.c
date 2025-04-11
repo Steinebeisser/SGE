@@ -34,7 +34,7 @@ int main(void) {
         }
 
         sge_window_create_settings window_create_settings = {
-                .window_mode = SGE_WINDOW_MODE_BORDERLESS,
+                .window_mode = SGE_WINDOW_MODE_BORDERLESS_FULLSCREEN,
                 .width = 700,
                 .height = 500,
                 .x = 200,
@@ -66,6 +66,8 @@ int main(void) {
 
         const int target_fps = 0;
 
+        create_cube();
+        create_healthbar();
         //char *test_allocation = allocate_memory(256, MEMORY_TAG_UNKNOWN);
         //char *test_allocation_2 = allocate_memory(256, MEMORY_TAG_TEST_1);
         //char *test_allocation_3 = allocate_memory(256, MEMORY_TAG_TEST_2);
@@ -114,6 +116,105 @@ int main(void) {
 
         sge_region *secondary_region = sge_region_create(render, &second_setting_2d);
 
+        char* author_name = "Stein";
+        char* scene_name = "test_scene";
+
+        sge_scene *scene = sge_scene_create(scene_name, author_name, NULL);
+
+        vec3 position_transformation = {2, -1, -1};
+        sge_scene_section *sgerend_section = sge_scene_create_sgerend_section(
+                SGE_SCENE_SGEREND_INCLUDE_TYPE_EXTERNAL,
+                "Test Cube Section",
+                "cube.sgerend",
+                strlen("cube.sgerend"),
+                SGE_SCENE_TRANSFORMATION_FLAG_POSITION,
+                &position_transformation);
+
+        typedef struct scale_position_trans {
+                vec3 position_trans;
+                vec3 scale_trans;
+        }scale_position_trans;
+
+        scale_position_trans sca_pos_trans = {
+                .position_trans =  {2, -1, -1},
+                .scale_trans = {2, 2, 1}
+        };
+
+        sge_scene_section *pyramid_section = sge_scene_create_sgerend_section(
+                SGE_SCENE_SGEREND_INCLUDE_TYPE_EXTERNAL,
+                "TEST PYRAMID",
+                "test.sgerend",
+                strlen("test.sgerend"),
+                SGE_SCENE_TRANSFORMATION_FLAG_POSITION | SGE_SCENE_TRANSFORMATION_FLAG_SCALE,
+                &sca_pos_trans);
+
+        sge_scene_add_section(scene, sgerend_section);
+        sge_scene_add_section(scene, pyramid_section);
+
+        typedef struct pos_rot_trans {
+                vec3    position_transform;
+                vec3    rotation_transform;
+        } pos_rot_trans;
+        pos_rot_trans trans_data = {
+                .position_transform = {0, 0, 0},
+                .rotation_transform = {45, 45, 45}
+        };
+        position_transformation = (vec3){0, 0, 0};
+
+        vec3 rotation_transformation = {45, 0, 0};
+
+        sge_scene_section *sgerend_section_2 = sge_scene_create_sgerend_section(
+                SGE_SCENE_SGEREND_INCLUDE_TYPE_EXTERNAL,
+                "test 2",
+                "cube.sgerend",
+                strlen("cube.sgerend"),
+                SGE_SCENE_TRANSFORMATION_FLAG_ROTATION | SGE_SCENE_TRANSFORMATION_FLAG_POSITION,
+                &trans_data);
+
+        sge_scene_add_section(scene, sgerend_section_2);
+
+        //printf("Section name seconds region: %s\n", scene->sections[1].section_header->section_name);
+
+        sge_scene_save("test_scene", scene);
+
+        sge_scene *scene_loaded = sge_scene_load("test_scene.sgescne");
+        if (!scene_loaded) {
+                terminate_program();
+        }
+
+        log_event(LOG_LEVEL_DEBUG, "Addeding scene to region");
+        sge_region_add_scene(render, main_region, scene_loaded);
+        log_event(LOG_LEVEL_DEBUG, "finished Addeding scene to region");
+        //printf("FIRST SECTION: %d, %s\n", scene_loaded->sections[0].section_header->sge_scene_section_type, (char*)scene_loaded->sections[0].parsed_data.sgerend->sgerend_source_data);
+
+       // sge_scene_header header = {
+       //         .author_name = author_name,
+       //         .author_name_size = strlen(author_name),
+       //         .creation_date_timestamp = get_current_ms_time(),
+       //         .last_modified_date_timestamp = get_current_ms_time(),
+       //         .description = NULL,
+       //         .description_size = 0,
+       //         .header_extension_count = 0,
+       //         .header_extensions = NULL,
+       //         .header_extension_size = 0,
+       //         .scene_name = scene_name,
+       //         .scene_name_size = strlen(scene_name),
+       //         .section_count = 0
+       // };
+
+       // sge_scene_section_header sgerend_section_header = {
+       //         .sge_scene_section_type = SGE_SCENE_SECTION_TYPE_SGEREND,
+       //         .
+       // };
+
+       // sge_scene_sgerend_section sge_scene_sgerend_section = {
+       //         .include_type = SGE_SCENE_SGEREND_INCLUDE_TYPE_EXTERNAL,
+       // };
+       // sge_scene_section *sgerend_section = sge_scene_create_sgerend_section(sgerend_section_header, sge_scene_sgerend_section);
+
+       // sge_scene_section scene_sections[] = { *sgerend_section };
+       // sge_scene_save("test_scene", &header, scene_sections);
+
         //sge_region_add_renderable(secondary_region, logo_renderable);
 
         //m4 test_matrix =
@@ -152,7 +253,6 @@ int main(void) {
                 .mode = ROTATE_NONE,
                 .delta_speed = 0.2f
         };
-
 
 
 
@@ -267,8 +367,6 @@ int main(void) {
         }
 
 
-        create_cube();
-        create_healthbar();
 
 
         sge_rend_file *cube_file = NULL;
@@ -394,6 +492,19 @@ int main(void) {
                 }
 
 
+                if (is_key_pressed(KEY_F11)) {
+                        log_event(LOG_LEVEL_INFO, "updating win");
+                        sge_window_create_settings win_update_settings = {
+                                .window_mode = SGE_WINDOW_MODE_WINDOWED,
+                                .screen = secondary_screen,
+                                .x = 100,
+                                .y = 200,
+                                .height = 500,
+                                .width = 1000,
+                                .is_resizable = SGE_FALSE
+                        };
+                        sge_window_mode_update(window, &win_update_settings);
+                }
 
                 mouse_pos delta_mouse_pos = get_delta_mouse_position();
 
