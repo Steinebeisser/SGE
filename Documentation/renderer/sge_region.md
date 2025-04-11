@@ -2,17 +2,39 @@
 
 ## Overview
 
+The SGE Region Module allows to render renderobjects or scenes
+
 ## Table of Content
-1. [Structures](#structures)
-    1.1 [sge_region_settings](#sge_region_settings) <br>
-    1.2 [sge_uniform_buffer_type](#sge_uniform_buffer_type) <br>
-    1.3 [sge_region](#sge_region) <br>
-2. [Enumerations](#enumerations)
-    2.1 [SGE_REGION_TYPE](#sge_region_type);
-3. [Defines](#defines)
-    3.1 [SGE_REGION_FULL_DIMENSION](#sge_region_full_dimension)
-4. [API Reference](#api-reference)
-5. [Examples](#examples)
+## SGE REGION MODULE
+
+### Overview
+The SGE Region Module allows to render renderobjects or scenes
+
+### Table of Content
+1. [Structures](#structures) <br>
+   1.1 [sge_region_settings](#sge_region_settings) <br>
+   1.2 [sge_uniform_buffer_type](#sge_uniform_buffer_type) <br>
+   1.3 [sge_region](#sge_region) <br>
+2. [Enumerations](#enumerations)<br>
+   2.1 [SGE_REGION_TYPE](#sge_region_type) <br>
+3. [Defines](#defines)<br>
+   3.1 [SGE_REGION_FULL_DIMENSION](#sge_region_full_dimension) <br>
+4. [API Reference](#api-reference)<br>
+   4.1 [sge_region_create](#sge_region-sge_region_createsge_render-render-sge_region_settings-settings) <br>
+   4.2 [sge_region_add_renderable](#sge_result-sge_region_add_renderablesge_region-region-sge_renderable-renderable) <br>
+   4.3 [sge_region_add_scene](#sge_result-sge_region_add_scene) <br>
+   4.4 [sge_region_resize_auto_resizing_regions](#sge_result-sge_region_resize_auto_resizing_regionssge_render-render-float-old_width-float-old_height-float-new_width-float-new_height) <br>
+   4.5 [sge_region_get_active](#sge_region-sge_region_get_activesge_render-render) <br>
+   4.6 [sge_region_get_active_list](#sge_region-sge_region_get_active_listsge_render-render-int-regions_count) <br>
+   4.7 [sge_region_get_width](#float-sge_region_get_widthsge_region-region-sge_render-render) <br>
+   4.8 [sge_region_get_height](#float-sge_region_get_heightsge_region-region-sge_render-render) <br>
+5. [Examples](#examples)<br>
+   5.1 [Region Creation](#region-creation) <br>
+   5.2 [Add Renderable to Region](#add-renderable-to-region) <br>
+   5.3 [Get active Region, and use it](#get-active-region-and-use-it) <br>
+   5.4 [Use Region to move a Camera](#use-region-to-move-a-camera) <br>
+   5.5 [Add a Scene](#add-a-scene)
+
 
 ---
 
@@ -113,6 +135,25 @@ typedef enum SGE_REGION_TYPE {
 #### Returns:
 - `SGE_SUCCESS` if the renderable was added
 - `SGE_ERROR_FAILED_ALLOCATION` if reallocation failed
+
+---
+
+### SGE_RESULT sge_region_add_scene(...)
+
+```c
+SGE_RESULT sge_region_add_scene(sge_render *render, sge_region *region, sge_scene *scene);
+```
+
+#### Parameters:
+- `render`: pointer to render struct
+- `region`: pointer to region
+- `scene`: pointer to scene
+
+#### Returns:
+- `SGE_SUCCESS`: always, enable and check logs if something fails
+
+---
+
 
 ---
 
@@ -229,4 +270,10 @@ Input in [input.md](../core/input.md)
 if (is_key_down(KEY_S)) {
         sge_camera_move_backwards(render, active_region, movement_settings_horizontal);
 }
+```
+
+### Add a scene
+
+```c
+sge_region_add_scene(render, main_region, scene_loaded);
 ```
