@@ -141,21 +141,37 @@ SGE_RESULT sge_vulkan_swapchain_create(sge_render *render) {
         return SGE_SUCCESS;
 }
 
+SGE_RESULT sge_vulkan_swapchain_recreate(sge_render *render) {
+        sge_vulkan_swapchain_destroy(render);
+        sge_vulkan_swapchain_create(render);
+
+        return SGE_SUCCESS;
+}
+
 SGE_RESULT sge_vulkan_swapchain_destroy(sge_render *render) {
         sge_vulkan_context *vk_context = (sge_vulkan_context*)render->api_context;
 
         vkDeviceWaitIdle(vk_context->device);
 
         for (uint32_t i = 0; i < vk_context->sc.sc_img_count; i++) {
-                if (vk_context->sc.color_views[i] != VK_NULL_HANDLE) {
+                if (vk_context->sc.color_views[i] != VK_NULL_HANDLE)
                         vkDestroyImageView(vk_context->device, vk_context->sc.color_views[i], vk_context->sge_allocator);
-                }
+                if (vk_context->sc.depth_views[i] != VK_NULL_HANDLE)
+                        vkDestroyImageView(vk_context->device, vk_context->sc.depth_views[i], vk_context->sge_allocator);
+                if (vk_context->sc.depth_images[i] != VK_NULL_HANDLE)
+                        vkDestroyImage(vk_context->device, vk_context->sc.depth_images[i], vk_context->sge_allocator);
+                if (vk_context->sc.depth_memories[i] != VK_NULL_HANDLE)
+                        vkFreeMemory(vk_context->device, vk_context->sc.depth_memories[i], vk_context->sge_allocator);
         }
         free_memory(vk_context->sc.color_views, MEMORY_TAG_VULKAN);
         vk_context->sc.color_views = NULL;
 
         free_memory(vk_context->sc.sc_images, MEMORY_TAG_VULKAN);
         vk_context->sc.sc_images = NULL;
+
+        free_memory(vk_context->sc.depth_views, MEMORY_TAG_VULKAN);
+        free_memory(vk_context->sc.depth_images, MEMORY_TAG_VULKAN);
+        free_memory(vk_context->sc.depth_memories, MEMORY_TAG_VULKAN);
 
         if (vk_context->swapchain != VK_NULL_HANDLE) {
                 vkDestroySwapchainKHR(vk_context->device, vk_context->swapchain, vk_context->sge_allocator);
