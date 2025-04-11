@@ -7,8 +7,8 @@
 
 
 #define SGE_SCENE_MAGIC_NUMBER "SGESCNE" //has 0 terminator automatically so 8 bytes
-#define SGE_SCENE_HEADER_FIXED_SIZE 48
-#define SGE_SCENE_SECTION_HEADER_FIXED_SIZE 40
+#define SGE_SCENE_HEADER_FIXED_SIZE 52
+#define SGE_SCENE_SECTION_HEADER_FIXED_SIZE 44
 
 
 #define SGE_TRANSFORMATION_POSITION_SIZE  12 //3x float32 (vec3)
@@ -17,7 +17,6 @@
 
 
 #include "sge_types.h"
-#include "sge_render_file.h"
 
 typedef enum SGE_SCENE_SECTION_TYPE {
         SGE_SCENE_SECTION_TYPE_SGEREND = 1,
@@ -61,6 +60,7 @@ typedef enum SGE_SCENE_SGEREND_INCLUDE_TYPE {
         SGE_SCENE_SGEREND_INCLUDE_TYPE_EMBEDDED = 1,
 } SGE_SCENE_SGEREND_INCLUDE_TYPE;
 
+#include "sge_render_file.h"
 typedef struct sge_scene_sgerend_section {
         uint8_t                 include_type; //SGE_SCENE_SGEREND_INCLUDE_TYPE
         uint16_t                additional_section_count;
@@ -97,7 +97,7 @@ typedef struct sge_scene_section_header {
 typedef struct sge_scene_section {
         sge_scene_section_header        *section_header;
         void                            *data;
-        sge_scene_section_data          parsed_data;
+        sge_scene_section_data          *parsed_data;
 } sge_scene_section;
 
 typedef struct sge_scene {
@@ -128,6 +128,6 @@ SGE_RESULT sge_scene_add_section(sge_scene *scene, sge_scene_section *section);
 SGE_RESULT sge_scene_save(char *filename, sge_scene *scene);
 sge_scene *sge_scene_load(char *filename);
 
-SGE_RESULT sge_scene_parse_sgerend_section(sge_scene_section_data *parsed_output, void *data, size_t data_size);
+SGE_RESULT sge_scene_parse_sgerend_section(sge_scene_section_data **parsed_output, void *data, size_t data_size);
 
 #endif //SGE_SCENE_FILE_H
