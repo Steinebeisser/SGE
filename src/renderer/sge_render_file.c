@@ -172,6 +172,7 @@ SGE_RESULT sge_rend_load(char *filename, sge_rend_file **outFile) {
         FILE *fd = fopen(filename, "rb");
         if (!fd) {
             log_internal_event(LOG_LEVEL_ERROR, "failed to open file");
+            *outFile = NULL;
             return SGE_ERROR;
         }
 
