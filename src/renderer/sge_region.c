@@ -327,6 +327,7 @@ SGE_RESULT sge_region_add_scene(sge_render *render, sge_region *region, sge_scen
                         }
                 }
         }
+        return SGE_SUCCESS;
 }
 
 
