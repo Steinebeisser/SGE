@@ -44,6 +44,10 @@ int amount_chars_in_int(int number);
 void *get_next_allocation_memory_tag_usage(const void *node);
 
 void *allocate_memory(const size_t size, const memory_tag tag) {
+        if (size <= 0) {
+                log_internal_event(LOG_LEVEL_ERROR, "tried to allocate memory with negative or 0 size");
+                return NULL;
+        }
         void *ptr = malloc(size);
         if (!ptr) {
                 log_internal_event(LOG_LEVEL_ERROR, "Failed allocating Memory");
@@ -165,6 +169,13 @@ void free_memory(void *ptr,const memory_tag tag) {
                                                 if (prev == NULL) {
                                                        memory_tag_usage_tracker = current_tag->next;
                                                 } else {
+                                                        if (!prev_tag) {
+                                                                break;
+                                                        }
+                                                        if (prev_tag->next == NULL) {
+                                                                break;
+                                                        }
+
                                                         prev_tag->next = current_tag->next;
                                                 }
 
