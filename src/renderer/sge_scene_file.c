@@ -567,7 +567,6 @@ sge_scene *sge_scene_load(char *filename) {
         return scene;
 }
 
-SGE_RESULT sge_scene_parse_sgerend_section(sge_scene_section_data *parsed_output, void *data, size_t data_size) {
 SGE_RESULT sge_scene_parse_sgerend_section(sge_scene_section_data **parsed_output, void *data, size_t data_size) {
         *parsed_output = NULL;
         sge_scene_sgerend_section *sgerend_data = allocate_memory(sizeof(sge_scene_sgerend_section), MEMORY_TAG_SCENE);
