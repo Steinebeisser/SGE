@@ -61,7 +61,7 @@ SGE_RESULT sge_vulkan_pipeline_create(sge_render *render) {
                 .binding = 0,
                 .stride = sizeof(float) * 3 + 4,
                 .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
-            };
+        };
 
         VkVertexInputAttributeDescription attribute_descriptions[2] = {
                 {

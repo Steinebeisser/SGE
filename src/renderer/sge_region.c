@@ -15,6 +15,12 @@
 extern bool is_hidden;
 extern mouse_pos last_visible_pos;
 
+SGE_RESULT sge_renderable_update_api_resources(sge_render *render, sge_renderable *renderable) {
+        if (render->sge_interface->update_renderable_resources(render, renderable) != SGE_SUCCESS) {
+                return SGE_ERROR;
+        }
+        return SGE_SUCCESS;
+}
 
 sge_region *sge_region_create(sge_render *render, sge_region_settings *settings) {
         sge_region *region = allocate_memory(sizeof(sge_region), MEMORY_TAG_REGION);
@@ -124,6 +130,205 @@ SGE_RESULT sge_region_add_renderable(sge_region *region, sge_renderable *rendera
 
         return SGE_SUCCESS;
 }
+
+SGE_RESULT sge_region_add_scene(sge_render *render, sge_region *region, sge_scene *scene) {
+        char *function_name = "sge_region_add_scene";
+        for (int i = 0; i < scene->header.section_count; ++i) {
+                sge_scene_section section = scene->sections[i];
+                if (section.section_header->sge_scene_section_type == SGE_SCENE_SECTION_TYPE_SGEREND) {
+                        if (section.parsed_data->sgerend->include_type == SGE_SCENE_SGEREND_INCLUDE_TYPE_EXTERNAL) {
+                                sge_rend_file *rend_file;
+                                sge_rend_load(section.parsed_data->sgerend->sgerend_source_data, &rend_file);
+                                if (!rend_file) {
+                                        log_internal_event(LOG_LEVEL_ERROR, "Failed to create renderable from scene");
+                                        continue;;
+                                }
+                                sge_renderable *rend = create_renderable_from_rend_file(render, rend_file);
+                                if (!rend) {
+                                        log_event(LOG_LEVEL_ERROR, "Failed to create renderable in \"%s\"", function_name);
+                                        continue;
+                                }
+
+                                size_t total_size = 0;
+                                SGE_BOOL has_pos = SGE_FALSE;
+                                SGE_BOOL has_sca = SGE_FALSE;
+                                SGE_BOOL has_rot = SGE_FALSE;
+                                if (section.parsed_data->sgerend->transformation_flags & SGE_SCENE_TRANSFORMATION_FLAG_POSITION) {
+                                        has_pos = SGE_TRUE;
+                                        total_size += SGE_TRANSFORMATION_SCALE_SIZE;
+                                }
+                                if (section.parsed_data->sgerend->transformation_flags & SGE_SCENE_TRANSFORMATION_FLAG_SCALE) {
+                                        has_sca = SGE_TRUE;
+                                        total_size += SGE_TRANSFORMATION_SCALE_SIZE;
+                                }
+                                if (section.parsed_data->sgerend->transformation_flags & SGE_SCENE_TRANSFORMATION_FLAG_ROTATION) {
+                                        has_rot = SGE_TRUE;
+                                        total_size += SGE_TRANSFORMATION_SCALE_SIZE;
+                                }
+
+                                vec3 position_transform, scale_transform, rotation_transform;
+                                size_t transform_offset = 0;
+                                //printf("TOTAL SIZE: %llu\n", total_size);
+                                if (has_pos) {
+                                        //printf("HAS POS\n");
+                                        copy_memory(&position_transform, section.parsed_data->sgerend->transformation_data, SGE_TRANSFORMATION_POSITION_SIZE, 0, transform_offset);
+                                        transform_offset += SGE_TRANSFORMATION_POSITION_SIZE;
+                                }
+                                if (has_sca) {
+                                        //printf("HAS SCA\n");
+                                        copy_memory(&scale_transform, section.parsed_data->sgerend->transformation_data, SGE_TRANSFORMATION_SCALE_SIZE, 0, transform_offset);
+                                        transform_offset += SGE_TRANSFORMATION_SCALE_SIZE;
+                                }
+                                if (has_rot) {
+                                        //printf("HAS ROT\n");
+                                        //printf("TRANSFORMATI OFFSETI: %llu\n", transform_offset);
+                                        copy_memory(&rotation_transform, section.parsed_data->sgerend->transformation_data, SGE_TRANSFORMATION_ROTATION_SIZE, 0, transform_offset);
+                                        transform_offset += SGE_TRANSFORMATION_ROTATION_SIZE;
+                                }
+
+                                //printf("POS TRANSFORM; x: %f, y: %f, z: %f\n", position_transform.x, position_transform.y, position_transform.z);
+
+                                m4 rotation_matrix;
+                                m4 position_matrix;
+                                m4 scale_matrix;
+                                m4 transformation_matrix;
+                                sge_m4_set_identity(transformation_matrix);
+                                sge_m4_set_identity(rotation_matrix);
+                                sge_m4_set_identity(position_matrix);
+                                sge_m4_set_identity(scale_matrix);
+                                if (has_rot) {
+                                        //sge_vec3_print(rotation_transform);
+                                        sge_m4_set_rotate(rotation_matrix, rotation_transform);
+                                        //printf("ROTATION\n");
+                                        //sge_m4_print(rotation_matrix);
+                                }
+                                if (has_pos) {
+                                        sge_m4_set_translate(position_matrix, position_transform);
+                                }
+                                if (has_sca) {
+                                        sge_m4_set_scale(scale_matrix, scale_transform);
+                                }
+
+                                m4 temp_matrix;
+                                sge_m4_set_identity(temp_matrix);
+
+                                if (has_rot) {
+                                        sge_m4_multiply(temp_matrix, rotation_matrix, transformation_matrix);
+                                        sge_m4_copy(transformation_matrix, temp_matrix);
+                                        //printf("TRANS AFTER ROT\n");
+                                        //sge_m4_print(transformation_matrix);
+                                }
+                                if (has_sca) {
+                                        //printf("SCALE MATRIX\n");
+                                        //sge_m4_print(scale_matrix);
+                                        sge_m4_multiply(temp_matrix, scale_matrix, transformation_matrix);
+                                        sge_m4_copy(transformation_matrix, temp_matrix);
+                                        //printf("TRANS AFTER SCA\n");
+                                        //sge_m4_print(transformation_matrix);
+                                }
+                                if (has_pos) {
+                                        //printf("POSITION\n");
+                                        //sge_m4_print(position_matrix);
+                                        sge_m4_multiply(temp_matrix, position_matrix, transformation_matrix);
+                                        sge_m4_copy(transformation_matrix, temp_matrix);
+                                        //printf("TRANS AFTER POS\n");
+                                        //sge_m4_print(transformation_matrix);
+                                }
+
+                                //printf("Transformation Matrix\n");
+                                //sge_m4_print(transformation_matrix);
+                                //printf("\n");
+                                uint32_t vertex_size = rend->mesh->vertex_size;
+                                SGE_FORMAT_TYPE position_format = 0;
+                                uint16_t position_components = 0;
+                                uint16_t position_offset = 0;
+                                // size of 16
+                                // offset 0
+                                // comp 3
+                                // fomrat float 32
+                                // 12 size pos attr at offset 0 nächstes dann bei 16 usw
+                                // 0-3 pos 1
+                                // 4-7 pos 2
+                                // 8-11 pos 3
+                                // 12-15 irgendwas anderes uninterressant
+                                SGE_BOOL format_found = SGE_FALSE;
+                                for (int j = 0; j < rend->mesh->attribute_count; ++j) {
+                                        sge_mesh_attribute attribute = rend->mesh->attributes[j];
+                                        if (attribute.type != SGE_ATTRIBUTE_POSITION) {
+                                                continue;
+                                        }
+                                        position_format = attribute.format;
+                                        position_components = attribute.components;
+                                        position_offset = attribute.offset;
+                                        format_found = SGE_TRUE;
+                                        break;
+                                }
+                                if (!format_found) {
+                                        log_event(LOG_LEVEL_ERROR, "Failed to find rend format in \"%s\"", function_name);
+                                        continue;
+                                }
+                                uint8_t *vertex_data = (uint8_t *)rend->mesh->vertex_buffer.data;
+                                for (int j = 0; j < rend->mesh->vertex_count; ++j) {
+                                        uint8_t *vertex_start = vertex_data + (j * vertex_size);
+                                        uint8_t *position_start = vertex_start + position_offset;
+
+                                        vec4 position = { .x = 0, .y = 0, .z = 0, .a = 1.0f };
+
+                                        switch (position_format) {
+                                                case SGE_FORMAT_FLOAT32: {
+                                                        for (uint16_t k = 0; k < position_components; ++k) {
+                                                                float value = *((float*)(position_start + k * sizeof(float)));
+                                                                switch (k) {
+                                                                        case 0: position.x = value; break;
+                                                                        case 1: position.y = value; break;
+                                                                        case 2: position.z = value; break;
+                                                                        case 3: position.a = value; break;
+                                                                        default: log_event(LOG_LEVEL_ERROR, "unknown position component \"%s\"", function_name);
+                                                                }
+                                                        }
+                                                }break;
+                                                case SGE_FORMAT_FLOAT16:break;
+                                                case SGE_FORMAT_INT8:break;
+                                                case SGE_FORMAT_UINT8:break;
+                                                case SGE_FORMAT_INT16:break;
+                                                case SGE_FORMAT_UINT16:break;
+                                                case SGE_FORMAT_INT32:break;
+                                                case SGE_FORMAT_UINT32:break;
+                                        }
+
+                                        vec4 transformed = sge_m4_transform_vec4(transformation_matrix, position);
+                                        //sge_vec4_print(transformed);
+
+
+                                        switch (position_format) {
+                                                case SGE_FORMAT_FLOAT32: {
+                                                        for (uint16_t k = 0; k < position_components; ++k) {
+                                                                float* position_dst = (float*)(position_start + k * sizeof(float));
+                                                                switch (k) {
+                                                                        case 0: *position_dst = transformed.x; break;
+                                                                        case 1: *position_dst = transformed.y; break;
+                                                                        case 2: *position_dst = transformed.z; break;
+                                                                        case 3: *position_dst = transformed.a; break;
+                                                                        default: log_event(LOG_LEVEL_ERROR, "unknown position component \"%s\"", function_name);
+                                                                }
+                                                        }
+                                                }break;
+                                                case SGE_FORMAT_FLOAT16:break;
+                                                case SGE_FORMAT_INT8:break;
+                                                case SGE_FORMAT_UINT8:break;
+                                                case SGE_FORMAT_INT16:break;
+                                                case SGE_FORMAT_UINT16:break;
+                                                case SGE_FORMAT_INT32:break;
+                                                case SGE_FORMAT_UINT32:break;
+                                        }
+                                }
+                                sge_renderable_update_api_resources(render, rend);
+                                sge_region_add_renderable(region, rend);
+                        }
+                }
+        }
+}
+
 
 SGE_RESULT sge_region_resize_auto_resizing_regions(sge_render *render, float old_width, float old_height, float new_width, float new_height) {
         if (new_height == 0 ||new_width == 0) {

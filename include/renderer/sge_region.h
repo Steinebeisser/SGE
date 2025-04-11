@@ -51,8 +51,12 @@ typedef struct sge_region {
         int                             z_index;
 } sge_region;
 
+typedef struct sge_scene sge_scene;
+#include "sge_scene_file.h"
+
 sge_region *sge_region_create(sge_render *render, sge_region_settings *settings);
 SGE_RESULT sge_region_add_renderable(sge_region *region, sge_renderable *renderable);
+SGE_RESULT sge_region_add_scene(sge_render *render, sge_region *region, sge_scene *scene);
 
 SGE_RESULT sge_region_resize_auto_resizing_regions(sge_render *render, float old_width, float old_height, float new_width, float new_height);
 
