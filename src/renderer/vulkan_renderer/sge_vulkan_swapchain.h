@@ -11,4 +11,6 @@ SGE_RESULT sge_vulkan_swapchain_create(sge_render *render);
 
 SGE_RESULT sge_vulkan_swapchain_destroy(sge_render *render);
 
+SGE_RESULT sge_vulkan_swapchain_recreate(sge_render *render);
+
 #endif //SGE_VULKAN_SWAPCHAIN_H

@@ -16,6 +16,7 @@ typedef enum memory_tag {
         MEMORY_TAG_REGION,
         MEMORY_TAG_WINDOW,
         MEMORY_TAG_SHADER,
+        MEMORY_TAG_SCENE,
         MEMORY_TAG_CUSTOM, // New tag case
 } memory_tag;
 
@@ -29,6 +30,7 @@ static inline const char *memory_tag_to_string(const memory_tag tag) {
                 case MEMORY_TAG_REGION: return "REGION";
                 case MEMORY_TAG_WINDOW: return "WINDOW";
                 case MEMORY_TAG_SHADER: return "SHADER";
+                case MEMORY_TAG_SCENE: return "SCENE";
                 case MEMORY_TAG_CUSTOM: return "CUSTOM"; // New tag case
                 default: return "INVALID_TAG";
         }

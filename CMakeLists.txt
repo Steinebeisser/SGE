@@ -3,23 +3,31 @@ project(SGE C)
 
 set(CMAKE_C_STANDARD 11)
 
-set(CMAKE_C_COMPILER "C:/Program Files/LLVM/bin/clang-cl.exe")
-set(CMAKE_CXX_COMPILER "C:/Program Files/LLVM/bin/clang-cl.exe")
-
-# Use /Zi for PDB generation and AddressSanitizer flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Zi -fsanitize=address")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zi -fsanitize=address")
-
-# Specify ASan runtime path and libraries
-set(ASAN_RUNTIME_PATH "C:\\Program Files\\LLVM\\lib\\clang\\20\\lib\\windows")
-link_directories(${ASAN_RUNTIME_PATH})
-set(ASAN_LIBS
-        clang_rt.asan_dynamic-x86_64.lib
-        clang_rt.asan_dynamic_runtime_thunk-x86_64.lib
-)
-# Ensure we're using /MT to avoid Debug CRT issues
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MT")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MT")
+if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+    find_program(CLANG_EXECUTABLE NAMES clang-cl clang REQUIRED)
+    if (!CLANG_EXECUTABLE)
+        message(FATAL_ERROR "Clang cl not found, aborting, try downloading from \"https://github.com/llvm/llvm-project/releases\"")
+    endif ()
+    set(CMAKE_C_COMPILER ${CLANG_EXECUTABLE})
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Zi -fsanitize=address")
+    find_library(ASAN_RUNTIME_PATH NAMES clang_rt.asan_dynamic-x86_64 libclang_rt.asan_dynamic)
+    if(ASAN_RUNTIME_PATH)
+        link_directories(${ASAN_RUNTIME_PATH})
+        set(ASAN_LIBS
+                clang_rt.asan_dynamic-x86_64.lib
+                clang_rt.asan_dynamic_runtime_thunk-x86_64.lib
+        )
+    else()
+        message(FATAL_ERROR "AddressSanitizer runtime libraries not found. Aborting build.")
+    endif()
+    link_directories(${ASAN_RUNTIME_PATH})
+    set(ASAN_LIBS
+            clang_rt.asan_dynamic-x86_64.lib
+            clang_rt.asan_dynamic_runtime_thunk-x86_64.lib
+    )
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MT")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MT")
+endif()
 
 
 
@@ -78,13 +86,15 @@ target_link_libraries(SGE PUBLIC Vulkan::Vulkan ${ASAN_LIBS})
 
 add_executable(TEST test.c)
 target_link_libraries(TEST PUBLIC SGE ${ASAN_LIBS})
-target_link_options(TEST PRIVATE /DEBUG)
 
-add_custom_command(TARGET TEST POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${ASAN_RUNTIME_PATH}/clang_rt.asan_dynamic-x86_64.dll"
-        $<TARGET_FILE_DIR:TEST>
-)
+if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+    target_link_options(TEST PRIVATE /DEBUG)
+    add_custom_command(TARGET TEST POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${ASAN_RUNTIME_PATH}/clang_rt.asan_dynamic-x86_64.dll"
+            $<TARGET_FILE_DIR:TEST>
+    )
+endif ()
 
 include(GNUInstallDirs)
 
