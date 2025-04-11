@@ -12,6 +12,10 @@
 #include "core/memory_control.h"
 #include "core/sge_internal_logging.h"
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 int amount_chars_in_float(float num);
 
 
@@ -243,7 +247,7 @@ void sge_m4_print(m4 matrix) {
         snprintf(matrix_string + strlen(matrix_string), sizeof(matrix_string), "\n");
                         //printf("%f ", matrix[i][j]);
 
-        printf(matrix_string);
+        printf("%s", matrix_string);
 }
 
 vec4 sge_m4_transform_vec4(m4 matrix, vec4 vec) {

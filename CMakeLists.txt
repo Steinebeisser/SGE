@@ -3,6 +3,26 @@ project(SGE C)
 
 set(CMAKE_C_STANDARD 11)
 
+set(CMAKE_C_COMPILER "C:/Program Files/LLVM/bin/clang-cl.exe")
+set(CMAKE_CXX_COMPILER "C:/Program Files/LLVM/bin/clang-cl.exe")
+
+# Use /Zi for PDB generation and AddressSanitizer flags
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Zi -fsanitize=address")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zi -fsanitize=address")
+
+# Specify ASan runtime path and libraries
+set(ASAN_RUNTIME_PATH "C:\\Program Files\\LLVM\\lib\\clang\\20\\lib\\windows")
+link_directories(${ASAN_RUNTIME_PATH})
+set(ASAN_LIBS
+        clang_rt.asan_dynamic-x86_64.lib
+        clang_rt.asan_dynamic_runtime_thunk-x86_64.lib
+)
+# Ensure we're using /MT to avoid Debug CRT issues
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MT")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MT")
+
+
+
 find_package(Vulkan REQUIRED)
 
 
@@ -54,10 +74,17 @@ target_include_directories(SGE
         PRIVATE ${CMAKE_SOURCE_DIR}/src
 )
 
-target_link_libraries(SGE PUBLIC Vulkan::Vulkan)
+target_link_libraries(SGE PUBLIC Vulkan::Vulkan ${ASAN_LIBS})
 
 add_executable(TEST test.c)
-target_link_libraries(TEST PUBLIC SGE)
+target_link_libraries(TEST PUBLIC SGE ${ASAN_LIBS})
+target_link_options(TEST PRIVATE /DEBUG)
+
+add_custom_command(TARGET TEST POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${ASAN_RUNTIME_PATH}/clang_rt.asan_dynamic-x86_64.dll"
+        $<TARGET_FILE_DIR:TEST>
+)
 
 include(GNUInstallDirs)
 
