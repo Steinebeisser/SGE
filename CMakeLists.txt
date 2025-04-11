@@ -4,22 +4,13 @@ project(SGE C)
 set(CMAKE_C_STANDARD 11)
 
 if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-    find_program(CLANG_EXECUTABLE NAMES clang-cl clang REQUIRED)
+    set(CLANG_EXECUTABLE "C:/Program Files/LLVM/bin/clang-cl.exe")
     if (!CLANG_EXECUTABLE)
-        message(FATAL_ERROR "Clang cl not found, aborting, try downloading from \"https://github.com/llvm/llvm-project/releases\"")
+        message(FATAL_ERROR "Clang cl not found, aborting, try downloading from \"https://github.com/llvm/llvm-project/releases\" or set Path correct")
     endif ()
     set(CMAKE_C_COMPILER ${CLANG_EXECUTABLE})
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Zi -fsanitize=address")
-    find_library(ASAN_RUNTIME_PATH NAMES clang_rt.asan_dynamic-x86_64 libclang_rt.asan_dynamic)
-    if(ASAN_RUNTIME_PATH)
-        link_directories(${ASAN_RUNTIME_PATH})
-        set(ASAN_LIBS
-                clang_rt.asan_dynamic-x86_64.lib
-                clang_rt.asan_dynamic_runtime_thunk-x86_64.lib
-        )
-    else()
-        message(FATAL_ERROR "AddressSanitizer runtime libraries not found. Aborting build.")
-    endif()
+    set(ASAN_RUNTIME_PATH "C:/Program Files/LLVM/lib/clang/20/lib/windows")
     link_directories(${ASAN_RUNTIME_PATH})
     set(ASAN_LIBS
             clang_rt.asan_dynamic-x86_64.lib
