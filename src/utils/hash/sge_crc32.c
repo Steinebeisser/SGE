@@ -2,7 +2,7 @@
 // Created by Geisthardt on 07.04.2025.
 //
 
-#include "utils/hash/crc32.h"
+#include "utils/hash/sge_crc32.h"
 
 #include <utils/sge_math.h>
 

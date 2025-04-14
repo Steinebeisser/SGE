@@ -4,15 +4,16 @@
 
 #include "renderer/sge_scene_file.h"
 
-#include <sge_version.h>
 #include <stdio.h>
 #include <string.h>
-#include <core/memory_control.h>
-#include <core/sge_internal_logging.h>
-#include <utils/sge_file.h>
-#include <utils/sge_time.h>
-#include <utils/sge_utils.h>
-#include <utils/hash/crc32.h>
+
+#include "sge_version.h"
+#include "core/memory_control.h"
+#include "core/sge_internal_logging.h"
+#include "utils/sge_file.h"
+#include "utils/sge_time.h"
+#include "utils/sge_utils.h"
+#include "utils/hash/sge_crc32.h"
 
 
 sge_scene *sge_scene_create(char *scene_name, char *author_name, char *description) {
