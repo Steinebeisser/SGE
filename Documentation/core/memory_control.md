@@ -16,6 +16,7 @@ Memory tags categorize memory allocations, used in tracking.
 | `MEMORY_TAG_REGION`   | 5     | Render Region specific allocations |
 | `MEMORY_TAG_WINDOW`   | 6     | Window system allocations          |
 | `MEMORY_TAG_SHADER`   | 7     | Shader system allocations          |
+| `MEMORY_TAG_SCENE`    | 8     | For Scene allocation               |
 
 ## Adding Custom Tags
 To add custom tags for your application, modify the header file by adding a new enum value. Additionally, update `memory_tag_to_string` to ensure proper string logging in `print_memory_usage_str`.
@@ -33,6 +34,7 @@ typedef enum memory_tag {
         MEMORY_TAG_REGION,
         MEMORY_TAG_WINDOW,
         MEMORY_TAG_SHADER,
+        MEMORY_TAG_SCENE,
         MEMORY_TAG_CUSTOM, // New custom tag
 } memory_tag;
 
@@ -46,6 +48,7 @@ static inline const char *memory_tag_to_string(const memory_tag tag) {
                 case MEMORY_TAG_REGION: return "REGION";
                 case MEMORY_TAG_WINDOW: return "WINDOW";
                 case MEMORY_TAG_SHADER: return "SHADER";
+                case MEMORY_TAG_SCENE: return "SCENE";
                 case MEMORY_TAG_CUSTOM: return "CUSTOM"; // New tag case
                 default: return "INVALID_TAG";
         }
