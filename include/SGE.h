@@ -19,7 +19,7 @@
 #include "utils/sge_file.h"
 #include "utils/sge_string.h"
 
-#include "utils/hash/crc32.h"
+#include "utils/hash/sge_crc32.h"
 
 
 #include "core/memory_control.h"
