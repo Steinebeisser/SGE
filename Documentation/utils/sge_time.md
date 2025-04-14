@@ -6,7 +6,7 @@
 
 1. [API Reference](#api-reference)
     1.1 [current_time_formatted](#char-current_time_formatted) <br>
-    1.2 [get_current_ms_time](#int-get_current_ms_time) <br>
+    1.2 [get_current_ms_time](#uint64_t-get_current_ms_time) <br>
     1.3 [get_current_year](#int-get_current_year) <br>
     1.4 [get_current_month](#int-get_current_month) <br>
     1.5 [get_current_day](#int-get_current_day) <br>
@@ -24,14 +24,14 @@ char* current_time_formatted();
 
 ---
 
-### `int get_current_ms_time()`
+### `uint64_t get_current_ms_time(...)`
 
 ```c
-int get_current_ms_time();
+uint64_t get_current_ms_time();
 ```
 
 #### Returns:
-- `int`: current time in milliseconds
+- `uint64_t`: current unix timestamp
 
 ---
 
