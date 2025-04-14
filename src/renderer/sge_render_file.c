@@ -5,8 +5,8 @@
 #include "renderer/sge_render_file.h"
 
 #include <stdio.h>
-#include <utils/hash/crc32.h>
 
+#include "utils/hash/sge_crc32.h"
 #include "sge_types.h"
 #include "sge_version.h"
 #include "core/sge_internal_logging.h"

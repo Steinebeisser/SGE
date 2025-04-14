@@ -64,7 +64,7 @@ add_library(SGE STATIC
         src/renderer/vulkan_renderer/sge_vulkan_memory.c
         src/core/sge_internal_logging.c
         src/renderer/sge_internal_render.c
-        src/utils/hash/crc32.c
+        src/utils/hash/sge_crc32.c
 )
 
 
