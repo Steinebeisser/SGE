@@ -24,9 +24,12 @@ The SGE Math Module is the Math interface in the SGE library to fulfill all need
    3.9 [sge_m4_multiply](#void-sge_m4_multiply) <br>
    3.10 [sge_m4_transpose](#void-sge_m4_transpose) <br>
    3.11 [sge_m4_set_rotate](#void-sge_m4_set_rotate) <br>
-   3.12 [sge_m4_print](#void-sge_m4_print) <br>
-   3.13 [sge_m4_transform_vec4](#vec4-sge_m4_transform_vec4) <br>
-   3.14 [squared](#size_t-squared) <br>
+   3.12 [sge_m4_copy](#void-sge_m4_copy) <br>
+   3.13 [sge_m4_print](#void-sge_m4_print) <br>
+   3.14 [sge_vec4_print](#void-sge_vec4_print) <br>
+   3.15 [sge_vec3_print](#void-sge_vec3_print) <br>
+   3.16 [sge_m4_transform_vec4](#vec4-sge_m4_transform_vec4) <br>
+   3.17 [squared](#size_t-squared) <br>
 4. [Examples](#examples) <br>
    4.1 [Adding 2 Vec3 Vectors](#adding-two-vec3-vectors) <br>
    4.2 [Normalizing a Vec3](#normalizing-a-vec3) <br>
@@ -360,6 +363,21 @@ void sge_m4_set_rotate(m4 matrix, vec3 rotation);
 
 ---
 
+### void sge_m4_copy(...)
+
+```c
+void sge_m4_copy(m4 m_to_copy, m4 m_from_copy);
+```
+
+#### Parameters:
+- `m_to_copy`: matrix to copy to
+- `m_from_copy`: matrix to copy from
+
+#### Returns:
+- `void`
+
+---
+
 ### void sge_m4_print(...)
 
 ```c
@@ -373,6 +391,35 @@ void sge_m4_print(m4 matrix);
 - `void`
 
 ---
+
+### void sge_vec4_print(...)
+
+```c
+void sge_vec4_print(vec4 vector);
+```
+
+#### Parameters:
+- `vector`: vec4 to print (to stdout)
+
+#### Returns:
+- `void`:
+
+---
+
+### void sge_vec3_print(...)
+
+```c
+void sge_vec3_print(vec3 vector);
+```
+
+#### Parameters:
+- `vector`: vec3 to print (to stdout)
+
+#### Returns:
+- `void`:
+
+---
+
 
 ### vec4 sge_m4_transform_vec4(...)
 
