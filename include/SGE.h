@@ -21,6 +21,8 @@
 
 #include "utils/hash/sge_crc32.h"
 
+#include "utils/image/sge_png.h"
+
 
 #include "core/memory_control.h"
 #include "core/logging.h"

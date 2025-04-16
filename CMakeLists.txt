@@ -65,18 +65,29 @@ add_library(SGE STATIC
         src/core/sge_internal_logging.c
         src/renderer/sge_internal_render.c
         src/utils/hash/sge_crc32.c
+        src/utils/image/sge_png.c
 )
 
+add_library(zlib STATIC
+        third_party/zlib/adler32.c
+        third_party/zlib/crc32.c
+        third_party/zlib/inffast.c
+        third_party/zlib/inflate.c
+        third_party/zlib/inftrees.c
+        third_party/zlib/uncompr.c
+        third_party/zlib/zutil.c
+)
+target_include_directories(zlib PUBLIC third_party/zlib)
 
 target_include_directories(SGE
         PUBLIC  ${CMAKE_SOURCE_DIR}/include
         PRIVATE ${CMAKE_SOURCE_DIR}/src
 )
 
-target_link_libraries(SGE PUBLIC Vulkan::Vulkan ${ASAN_LIBS})
+target_link_libraries(SGE PUBLIC Vulkan::Vulkan ${ASAN_LIBS} zlib)
 
 add_executable(TEST test.c)
-target_link_libraries(TEST PUBLIC SGE ${ASAN_LIBS})
+target_link_libraries(TEST PUBLIC SGE ${ASAN_LIBS} zlib)
 
 if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     target_link_options(TEST PRIVATE /DEBUG)
