@@ -48,16 +48,16 @@ The header defines general information about the `.sgetext` file. Its initial si
 
 | Offset       | Size    | Name                         | Description                           |
 |--------------|---------|------------------------------|---------------------------------------|
-| 0x00         | 2 Bytes | Section Type                 | Specifies the type of texture section |
-| 0x02         | 8 Bytes | Section Offset               | File offset where the section starts  |
-| 0x0A         | 8 Bytes | Data Size                    | Size of section data excluding header |
-| 0x12         | 4 Bytes | Section Name Size            | Populates `S Bytes`                   |
-| 0x16         | S Bytes | Section Name                 | Unique name identifying the texture   |
-| 0x16 + S     | 8 Bytes | Creation Date Timestamp      | Unix Timestamp                        |
-| 0x1E + S     | 8 Bytes | Last Modified Date Timestamp | Unix Timestamp                        |
-| 0x26 + S     | 2 Bytes | Section Extension Count      | Number of extensions in the section   |
-| 0x28 + S     | E Bytes | Section Extension Data       | Optional extension data               |
-| 0x28 + S + E | 4 Bytes | Section Checksum             | CRC32 Checksum                        |
+| 0x00         | 1 Bytes | Section Type                 | Specifies the type of texture section |
+| 0x01         | 8 Bytes | Section Offset               | File offset where the section starts  |
+| 0x09         | 8 Bytes | Data Size                    | Size of section data excluding header |
+| 0x11         | 4 Bytes | Section Name Size            | Populates `S Bytes`                   |
+| 0x15         | S Bytes | Section Name                 | Unique name identifying the texture   |
+| 0x15 + S     | 8 Bytes | Creation Date Timestamp      | Unix Timestamp                        |
+| 0x1D + S     | 8 Bytes | Last Modified Date Timestamp | Unix Timestamp                        |
+| 0x25 + S     | 2 Bytes | Section Extension Count      | Number of extensions in the section   |
+| 0x27 + S     | E Bytes | Section Extension Data       | Optional extension data               |
+| 0x27 + S + E | 4 Bytes | Section Checksum             | CRC32 Checksum                        |
 
 ---
 
@@ -86,14 +86,15 @@ Body is based on Include Type
 
 **include_type = 1 (SGE_SCENE_SGEREND_INCLUDE_TYPE_EMBEDDED)**
 
-| Offset | Size    | Name                            | Description         |
-|:-------|:--------|:--------------------------------|:--------------------|
-| 0x00   | 1 Byte  | Include Type                    | 0 (External)        |
-| 0x01   | 2 Byte  | `SGE_TEXTURE_FORMAT_COLOR_TYPE` | Texture format      |
-| 0x03   | 4 Byte  | Width                           | Height in Pixels    |
-| 0x07   | 4 Byte  | Height                          | Height in Pixels    |
-| 0x0B   | 4 Byte  | Data Size                       | Size of Binary Data |
-| 0x0F   | DS Byte | Raw Data                        | Raw Color Data      |
+| Offset | Size    | Name                            | Description                                        |
+|:-------|:--------|:--------------------------------|:---------------------------------------------------|
+| 0x00   | 1 Byte  | Include Type                    | 0 (External)                                       |
+| 0x01   | 1 Byte  | `SGE_TEXTURE_FORMAT_COLOR_TYPE` | Texture format                                     |
+| 0x03   | 1 Byte  | Bit Depth                       | 1, 2, 4, 8, 16, must be compatible with color type |
+| 0x05   | 4 Byte  | Width                           | Height in Pixels                                   |
+| 0x0D   | 4 Byte  | Height                          | Height in Pixels                                   |
+| 0x11   | 8 Byte  | Data Size                       | Size of Binary Data                                |
+| 0x19   | DS Byte | Parsed Data                     | Raw Color Data                                     |
 
 
 ### Normal Body
@@ -108,20 +109,11 @@ Body is based on Include Type
 
 ```c
 typedef enum SGE_TEXTURE_FORMAT_COLOR_TYPE{
-   SGE_TEXTURE_FORMAT_COLOR_TYPE_INVALID = 0,
-   SGE_TEXTURE_FORMAT_COLOR_TYPE_R8G8B8A8_UNORM = 1,
-   SGE_TEXTURE_FORMAT_COLOR_TYPE_R8G8B8_UNORM = 2,
-   SGE_TEXTURE_FORMAT_COLOR_TYPE_R8G8_UNORM = 3,
-   SGE_TEXTURE_FORMAT_COLOR_TYPE_R8_UNORM = 4,
-   SGE_TEXTURE_FORMAT_COLOR_TYPE_R16G16B16A16_UNORM = 5,
-   SGE_TEXTURE_FORMAT_COLOR_TYPE_R16G16B16_UNORM = 6,
-   SGE_TEXTURE_FORMAT_COLOR_TYPE_R16G16_UNORM = 7,
-   SGE_TEXTURE_FORMAT_COLOR_TYPE_R16_UNORM = 8,
-   SGE_TEXTURE_FORMAT_COLOR_TYPE_R32G32B32A32_SFLOAT = 9,
-   SGE_TEXTURE_FORMAT_COLOR_TYPE_R32G32B32_SFLOAT = 10,
-   SGE_TEXTURE_FORMAT_COLOR_TYPE_R32G32_SFLOAT = 11,
-   SGE_TEXTURE_FORMAT_COLOR_TYPE_R32_SFLOAT = 12,
-   //more as needed
+   SGE_TEXTURE_FORMAT_COLOR_TYPE_GRAYSCALE = 0,
+   SGE_TEXTURE_FORMAT_COLOR_TYPE_TRUECOLOR = 2,
+   SGE_TEXTURE_FORMAT_COLOR_TYPE_INDEXED = 3,
+   SGE_TEXTURE_FORMAT_COLOR_TYPE_GRAYSCALE_WITH_ALPHA = 4,
+   SGE_TEXTURE_FORMAT_COLOR_TYPE_TRUECOLOR_WITH_ALPHA = 6,
 } SGE_TEXTURE_FORMAT_COLOR_TYPE;
 ```
 
