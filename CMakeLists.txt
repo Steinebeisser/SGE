@@ -65,6 +65,7 @@ add_library(SGE STATIC
         src/core/sge_internal_logging.c
         src/renderer/sge_internal_render.c
         src/utils/hash/sge_crc32.c
+        src/utils/cpu/sge_endianess.c
 )
 
 
