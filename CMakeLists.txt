@@ -66,6 +66,7 @@ add_library(SGE STATIC
         src/renderer/sge_internal_render.c
         src/utils/hash/sge_crc32.c
         src/utils/image/sge_png.c
+        src/renderer/sge_texture_file.c
 )
 
 add_library(zlib STATIC
