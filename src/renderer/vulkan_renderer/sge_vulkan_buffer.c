@@ -8,6 +8,45 @@
 #include "core/sge_internal_logging.h"
 #include "vulkan_structs.h"
 
+SGE_RESULT sge_vulkan_create_buffer(
+        sge_render *render,
+        VkDeviceSize size,
+        VkBufferUsageFlags usage,
+        VkMemoryPropertyFlags properties,
+        VkBuffer *buffer,
+        VkDeviceMemory *bufferMemory
+) {
+        sge_vulkan_context *vk_context = render->api_context;
+
+        VkBufferCreateInfo bufferInfo = {
+                .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+                .size = size,
+                .usage = usage,
+                .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+            };
+
+        if (vkCreateBuffer(vk_context->device, &bufferInfo, NULL, buffer) != VK_SUCCESS) {
+                log_internal_event(LOG_LEVEL_ERROR, "Failed to create buffer.");
+                return SGE_ERROR;
+        }
+
+        VkMemoryRequirements memRequirements;
+        vkGetBufferMemoryRequirements(vk_context->device, *buffer, &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo = {
+                .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+                .allocationSize = memRequirements.size,
+                .memoryTypeIndex = find_memory_type(render, memRequirements.memoryTypeBits, properties),
+            };
+
+        if (vkAllocateMemory(vk_context->device, &allocInfo, NULL, bufferMemory) != VK_SUCCESS) {
+                log_internal_event(LOG_LEVEL_ERROR, "Failed to allocate buffer memory.");
+                return SGE_ERROR;
+        }
+
+        vkBindBufferMemory(vk_context->device, *buffer, *bufferMemory, 0);
+        return SGE_SUCCESS;
+}
 
 SGE_RESULT sge_vulkan_uniform_buffer_create(sge_render *render) {
         sge_vulkan_context *vk_context = render->api_context;

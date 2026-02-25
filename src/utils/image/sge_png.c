@@ -391,7 +391,7 @@ SGE_RESULT sge_parse_idat_data(sge_png_metadata *metadata) {
         }
 
         png_size *metadata_sizes = get_decompressed_size(metadata);
-        //printf("DECOMPRESSED SIZE: %llu\n",metadata_sizes->decompressed_size);
+        printf("DECOMPRESSED SIZE: %llu\n",metadata_sizes->decompressed_size);
 
         void *decompressed_data = allocate_memory(metadata_sizes->decompressed_size, MEMORY_TAG_IMAGE);
         if (!decompressed_data) {
@@ -416,6 +416,7 @@ SGE_RESULT sge_parse_idat_data(sge_png_metadata *metadata) {
 
 
         size_t unfiltered_size = metadata_sizes->unfiltered_size;
+        printf("UNFILTERED SIZE: %llu\n", unfiltered_size);
         //printf("UNFILTERTED SIZE: %llu\n", metadata_sizes->unfiltered_size);
         uint8_t *unfiltered_data = allocate_memory(unfiltered_size, MEMORY_TAG_IMAGE);
         if (!unfiltered_data) {
@@ -502,6 +503,7 @@ SGE_RESULT sge_parse_idat_data(sge_png_metadata *metadata) {
 
         metadata->idat_data = reallocate_memory(metadata->idat_data, unfiltered_size, MEMORY_TAG_IMAGE);
         copy_memory(metadata->idat_data, unfiltered_data, unfiltered_size, 0, 0);
+        copy_memory(&metadata->idat_length, &unfiltered_size, sizeof(size_t), 0, 0);
 
         return SGE_SUCCESS;
 }

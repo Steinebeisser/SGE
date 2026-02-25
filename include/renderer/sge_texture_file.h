@@ -14,6 +14,7 @@
 
 #define SGE_TEXTURE_FLAG_FORCE_WRITE 0x01
 
+#include "sge_render.h"
 #include "sge_types.h"
 
 typedef enum SGE_TEXTURE_SECTION_TYPE {
@@ -102,6 +103,10 @@ typedef struct sge_texture {
         sge_texture_section     *sections;
 } sge_texture;
 
+typedef struct sge_render_texture {
+        void *api_texture;
+} sge_render_texture;
+
 
 sge_texture *sge_texture_create(char *texture_name, char *author_name, char *description);
 
@@ -116,5 +121,7 @@ sge_texture *sge_texture_load(char *filepath);
 
 
 SGE_RESULT sge_texture_parse_color_section(sge_parsed_section_data *parsed_output, void *raw_data, size_t data_size);
+
+sge_render_texture *sge_render_texture_create(sge_render *render, sge_texture *texture);
 
 #endif //SGE_TEXTURE_FILE_H

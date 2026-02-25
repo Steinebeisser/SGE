@@ -5,8 +5,18 @@
 #ifndef SGE_VULKAN_BUFFER_H
 #define SGE_VULKAN_BUFFER_H
 
+#include <vulkan/vulkan_core.h>
+
 #include "renderer/sge_render.h"
 
+SGE_RESULT sge_vulkan_create_buffer(
+        sge_render *render,
+        VkDeviceSize size,
+        VkBufferUsageFlags usage,
+        VkMemoryPropertyFlags properties,
+        VkBuffer *buffer,
+        VkDeviceMemory *bufferMemory
+);
 SGE_RESULT sge_vulkan_uniform_buffer_create(sge_render *render);
 SGE_RESULT sge_vulkan_buffer_create(sge_render *render, void **buffer_ptr);
 SGE_RESULT sge_vulkan_allocate_buffer(sge_render *render, void **memory_ptr, void *buffer);

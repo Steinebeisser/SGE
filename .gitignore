@@ -1,2 +1,13 @@
-cmake-build-debug/*
 .idea/*
+cmake-build-debug/*
+cmake-build-release/*
+cmake-build-debug-mingw/*
+cmake-build-release-mingw/*
+cmake-build-release-visual-studio-1/*
+cmake-build-relwithdebinfo-visual-studio-1/*
+build/*
+build-clang/*
+build-test/*
+.vs/*
+out/*
+install/*

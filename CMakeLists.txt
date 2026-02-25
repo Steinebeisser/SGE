@@ -68,6 +68,8 @@ add_library(SGE STATIC
         src/utils/cpu/sge_endianess.c
         src/utils/image/sge_png.c
         src/renderer/sge_texture_file.c
+        src/renderer/vulkan_renderer/sge_vulkan_texture.c
+        src/renderer/vulkan_renderer/sge_vulkan_texture.h
 )
 
 add_library(zlib STATIC

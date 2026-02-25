@@ -1,0 +1,40 @@
+header
+
+SGEREND\0       -8 BYTE
+0x0002           -2 byte major version
+0x0001           -2 byte minor version
+0x0000           -2 byte patch
+0xidk           -4 byte section count
+header extension count -4 byte 0 for no extension
+header extension data      -variable size
+maybe flags but idk for what
+sth future proof to extend header
+header checksum
+
+
+--------------
+
+section header
+
+0x00000001      -1 byte section type (mesh/material/physics and so on)
+future proof    -8 byte future proof
+0x2134          -8 byte section size for future proof (4 byte only 4gb)
+section offset  -8 byte
+size            -whatever size is - data
+section header extension count -4b
+section header extension data -variable length
+future prrof to extend
+section header checksum
+
+------------
+section body = length specified in header
+
+
+
+--------------
+
+extensions
+
+blabla      -1 byte extension type
+0x943       -4 byte extension data size
+data        -variable size

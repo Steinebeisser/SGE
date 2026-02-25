@@ -115,6 +115,8 @@ typedef struct sge_render sge_render;
 typedef struct sge_uniform_buffer_type sge_uniform_buffer_type;
 typedef struct sge_window sge_window;
 typedef struct sge_region sge_region;
+typedef struct sge_texture sge_texture;
+typedef struct sge_render_texture sge_render_texture;
 typedef struct sge_renderer_interface {
         SGE_RESULT (*initialize)(sge_render *render, sge_render_settings *settings);
         SGE_RESULT (*shutdown)(sge_render *render);
@@ -128,6 +130,7 @@ typedef struct sge_renderer_interface {
         SGE_RESULT (*update_descriptor_set)(sge_render *render, sge_uniform_buffer_type *buffer);
         SGE_RESULT (*create_renderable_resources)(sge_render *render, sge_renderable *renderable);
         SGE_RESULT (*update_renderable_resources)(sge_render *render, sge_renderable *renderable);
+        SGE_RESULT (*create_render_texture)(sge_render *render, sge_texture *texture, sge_render_texture **out_texture);
 } sge_renderer_interface;
 
 #include "renderer/sge_camera.h"
@@ -159,6 +162,7 @@ typedef struct sge_render_settings {
 
 
 #include "renderer/sge_region.h"
+#include "sge_texture_file.h"
 
 sge_render *sge_render_create(SGE_RENDER_API api, sge_window *window);
 SGE_RESULT sge_render_initialize(sge_render *render, sge_render_settings *settings);

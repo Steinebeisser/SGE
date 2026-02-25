@@ -26,6 +26,7 @@
 #include "sge_vulkan_descriptor.h"
 #include "sge_vulkan_uniform.h"
 #include "sge_vulkan_renderables.h"
+#include "sge_vulkan_texture.h"
 
 
 

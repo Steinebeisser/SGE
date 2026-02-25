@@ -224,7 +224,7 @@ sge_texture_section *sge_texture_section_create_color(SGE_TEXTURE_BODY_INCLUDE_T
                 copy_memory(section->raw_data, &color_embedded->width, sizeof(uint32_t), raw_data_offset, 0);
                 raw_data_offset += sizeof(uint32_t);
 
-                copy_memory(section->raw_data, &color_embedded->bit_depth, sizeof(uint32_t), raw_data_offset, 0);
+                copy_memory(section->raw_data, &color_embedded->height, sizeof(uint32_t), raw_data_offset, 0);
                 raw_data_offset += sizeof(uint32_t);
 
                 copy_memory(section->raw_data, &color_embedded->data_size, sizeof(uint64_t), raw_data_offset, 0);
@@ -846,4 +846,19 @@ SGE_RESULT sge_texture_parse_color_section(sge_parsed_section_data *parsed_outpu
         }
 
         return SGE_SUCCESS;
+}
+
+sge_render_texture *sge_render_texture_create(sge_render *render, sge_texture *texture) {
+        if (!render || !texture) {
+                log_internal_event(LOG_LEVEL_WARNING, "sge_render_texture_create: didnt pass either render or texture");
+                return NULL;
+        }
+
+        sge_render_texture *out_texture;
+        if (render->sge_interface->create_render_texture(render, texture, &out_texture) != SGE_SUCCESS) {
+                log_internal_event(LOG_LEVEL_ERROR, "sge_render_texture_create: failed to create render texture");
+                free_memory(out_texture, MEMORY_TAG_UNKNOWN);
+                return NULL;
+        }
+        return out_texture;
 }

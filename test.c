@@ -34,7 +34,7 @@ int main(void) {
         }
 
         sge_window_create_settings window_create_settings = {
-                .window_mode = SGE_WINDOW_MODE_BORDERLESS_FULLSCREEN,
+                .window_mode = SGE_WINDOW_MODE_WINDOWED,
                 .width = 700,
                 .height = 500,
                 .x = 200,
@@ -55,7 +55,7 @@ int main(void) {
                 .vulkan = {
                         .enable_validation_layers = SGE_TRUE,
                         .use_dynamic_rendering = SGE_TRUE,
-                        .use_sge_allocator = SGE_TRUE,
+                        .use_sge_allocator = SGE_FALSE,
                         .app_info = {
                                 .application_name = "Test Example",
                                 .application_version = sge_make_app_version(0, 1, 1)
@@ -247,7 +247,7 @@ int main(void) {
         };
         sge_movement_settings sprint_settings_horizontal = {
                 .mode = ROTATE_PITCH_AND_YAW,
-                .delta_speed = 3,
+                .delta_speed = 10,
         };
         sge_movement_settings movement_settings_vertical = {
                 .mode = ROTATE_NONE,
@@ -408,6 +408,51 @@ int main(void) {
         SGE_BOOL is_first_frame = SGE_TRUE;
         uint32_t frame_count = 0;
 
+
+        sge_png_metadata metadata = {0};
+        if (sge_png_parse_data("../barack.png", &metadata) != SGE_SUCCESS) {
+                terminate_program();
+        }
+
+        sge_texture *barack_texture = sge_texture_create("barack", "barack", "BARACK!!!!");
+        if (!barack_texture) {
+                terminate_program();
+        }
+
+        sge_texture_section *color_section = sge_texture_section_create_color(SGE_TEXTURE_BODY_INCLUDE_TYPE_EMBEDDED, "../barack.png", "barack color");
+        if (!color_section) {
+                terminate_program();
+        }
+
+        sge_texture_section *color_section_2 = sge_texture_section_create_color(SGE_TEXTURE_BODY_INCLUDE_TYPE_EXTERNAL, "../barack.png", "barack color External");
+        if (!color_section_2) {
+                terminate_program();
+        }
+
+        if (sge_texture_add_section(barack_texture, color_section) != SGE_SUCCESS) {
+                terminate_program();
+        }
+
+        //if (sge_texture_add_section(barack_texture, color_section_2) != SGE_SUCCESS) {
+        //        terminate_program();
+        //}
+
+        if (sge_texture_save("barack", barack_texture, SGE_TEXTURE_FLAG_FORCE_WRITE) != SGE_SUCCESS) {
+                terminate_program();
+        }
+
+        sge_texture *barack_texture2 = sge_texture_load("barack.sgetext");
+        if (!barack_texture2) {
+                terminate_program();
+        }
+
+        sge_render_texture *render_text_obama = sge_render_texture_create(render, barack_texture2);
+        if (!render_text_obama) {
+                printf("NO SUCCESSI; DIE DIE DIE\n");
+                terminate_program();
+        }
+
+
         while (!window_should_close()) {
                 //printf("STARTED LOOP");
                 //do stuff
@@ -540,7 +585,7 @@ int main(void) {
                 update_frame(target_fps, start_time, window);
                 //timeEndPeriod(1);
                 //printf("REACHED LOOP END, REPEATING");
-                if (frame_count == 999999) {
+                if (frame_count == 1500) {
                         log_event(LOG_LEVEL_INFO, "UPDATING WIN MODE");
                         if (!secondary_screen) {
                                 terminate_program();

@@ -5,7 +5,6 @@
 #include "vulkan_renderer.h"
 
 
-
 #include "core/sge_internal_logging.h"
 
 
@@ -21,7 +20,8 @@ sge_renderer_interface sge_vulkan_interface = {
         .allocate_descriptor_set = sge_vulkan_descriptor_set,
         .update_descriptor_set = sge_vulkan_descriptor_update,
         .create_renderable_resources = sge_vulkan_create_renderable_resources,
-        .update_renderable_resources = sge_vulkan_update_renderable_resources
+        .update_renderable_resources = sge_vulkan_update_renderable_resources,
+        .create_render_texture = sge_vulkan_create_render_texture,
 };
 
 
